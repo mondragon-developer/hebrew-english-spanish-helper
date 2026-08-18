@@ -1,0 +1,18 @@
+{
+  "name": "lingua-live",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs",
+    "test": "node --test",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "node --check public/app.js && node --check api/translate.js && node --check api/_lib/provider.js",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
