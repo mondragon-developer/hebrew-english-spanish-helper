@@ -140,7 +140,7 @@ sequenceDiagram
     UI->>User: Requests microphone permission
     UI->>Audio: Captures one mono phrase
     Audio->>Audio: Detects voice and approximately 1.75 s silence
-    Audio->>Audio: Stops manually, on silence, or at 30 s
+    Audio->>Audio: Stops manually, on silence, or at 45 s
     Audio->>Audio: Downsamples and encodes 16 kHz mono WAV
     UI->>API: POST language, MIME type, and Base64 audio
     API->>API: Validate request, WAV structure, duration, size, and rate limit
@@ -151,7 +151,7 @@ sequenceDiagram
     UI->>API: Starts normal translation flow
 ```
 
-Only one recording is active at a time. The browser enforces a 30-second and 3 MB limit, and the server validates the audio again rather than trusting the client.
+Only one recording is active at a time. The browser enforces a 45-second and 3 MB limit, and the server validates the audio again rather than trusting the client. At 16 kHz, 16-bit mono, a full 45-second WAV is approximately 1.44 MB and remains safely below the upload ceiling.
 
 ## Component and trust boundaries
 

@@ -2,7 +2,7 @@ import { SUPPORTED_LANGUAGE_CODES } from './languages.js';
 
 export const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
 export const MAX_BASE64_AUDIO_LENGTH = Math.ceil(MAX_AUDIO_BYTES / 3) * 4;
-export const MAX_AUDIO_SECONDS = 30.5;
+export const MAX_AUDIO_SECONDS = 45.5;
 export const SPEECH_LOCALES = Object.freeze({ he: 'he-IL', en: 'en-US', es: 'es-ES' });
 
 export class SpeechValidationError extends Error {
@@ -56,6 +56,6 @@ function validateWav(audio) {
     throw new SpeechValidationError('The WAV recording is incomplete.');
   }
   if (dataLength / byteRate > MAX_AUDIO_SECONDS) {
-    throw new SpeechValidationError('Recordings must be 30 seconds or shorter.', 413, 'AUDIO_TOO_LONG');
+    throw new SpeechValidationError('Recordings must be 45 seconds or shorter.', 413, 'AUDIO_TOO_LONG');
   }
 }

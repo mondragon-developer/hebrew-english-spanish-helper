@@ -28,6 +28,12 @@ test('accepts supported language and valid short WAV audio', () => {
   assert.equal(input.audio.length, 32044);
 });
 
+test('accepts a 45-second WAV within the 3 MB upload limit', () => {
+  const audio = wav(45);
+  assert.ok(audio.length < 3 * 1024 * 1024);
+  assert.equal(parseSpeechInput({ language: 'es', mimeType: 'audio/wav', audio: audio.toString('base64') }).audio.length, 1440044);
+});
+
 test('rejects WAV headers that lie about byte rate or payload length', () => {
   const invalidRate = wav();
   invalidRate.writeUInt32LE(1, 28);
@@ -41,7 +47,7 @@ for (const [name, body, code] of [
   ['unsupported language', { language: 'fr', mimeType: 'audio/wav', audio: wav().toString('base64') }, 'UNSUPPORTED_LANGUAGE'],
   ['unsupported format', { language: 'en', mimeType: 'audio/mp4', audio: wav().toString('base64') }, 'UNSUPPORTED_AUDIO'],
   ['invalid audio', { language: 'es', mimeType: 'audio/wav', audio: Buffer.from('not wav').toString('base64') }, 'UNSUPPORTED_AUDIO'],
-  ['overlong audio', { language: 'en', mimeType: 'audio/wav', audio: wav(31).toString('base64') }, 'AUDIO_TOO_LONG']
+  ['overlong audio', { language: 'en', mimeType: 'audio/wav', audio: wav(46).toString('base64') }, 'AUDIO_TOO_LONG']
 ]) test(`rejects ${name}`, () => assert.throws(() => parseSpeechInput(body), { code }));
 
 test('returns successful Azure transcription', async () => {

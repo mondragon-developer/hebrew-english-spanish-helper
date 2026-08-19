@@ -1,4 +1,4 @@
-export const MAX_RECORDING_SECONDS = 30;
+export const MAX_RECORDING_SECONDS = 45;
 export const SILENCE_SECONDS = 1.75;
 export const SILENCE_THRESHOLD = 0.018;
 export const OUTPUT_SAMPLE_RATE = 16000;

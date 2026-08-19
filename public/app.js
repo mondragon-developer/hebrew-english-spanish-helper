@@ -94,8 +94,8 @@ function setRecordingUi(active, busy = false) {
 }
 
 function resetRecordingTimer() {
-  recordingTimer.textContent = '0:00 / 0:30';
-  recordingTimer.setAttribute('aria-label', 'Recording time: 0 seconds of 30');
+  recordingTimer.textContent = `0:00 / 0:${MAX_RECORDING_SECONDS}`;
+  recordingTimer.setAttribute('aria-label', `Recording time: 0 seconds of ${MAX_RECORDING_SECONDS}`);
 }
 
 async function stopRecording(reason = 'manual') {
@@ -121,7 +121,7 @@ async function stopRecording(reason = 'manual') {
     setRecorderMessage('No speech was detected. Move closer to the microphone and try again.');
     return;
   }
-  setRecorderMessage(reason === 'silence' ? 'Silence detected. Transcribing…' : reason === 'limit' ? '30-second limit reached. Transcribing…' : 'Transcribing your recording…');
+  setRecorderMessage(reason === 'silence' ? 'Silence detected. Transcribing…' : reason === 'limit' ? `${MAX_RECORDING_SECONDS}-second limit reached. Transcribing…` : 'Transcribing your recording…');
   try {
     const samples = downsampleAudio(state.chunks, state.context.sampleRate);
     const wav = encodeWav(samples);
@@ -183,8 +183,8 @@ async function startRecording() {
     state.timer = setInterval(() => {
       const elapsed = Math.min(MAX_RECORDING_SECONDS, (performance.now() - state.startedAt) / 1000);
       const seconds = Math.floor(elapsed);
-      recordingTimer.textContent = `0:${String(seconds).padStart(2, '0')} / 0:30`;
-      recordingTimer.setAttribute('aria-label', `Recording time: ${seconds} seconds of 30`);
+      recordingTimer.textContent = `0:${String(seconds).padStart(2, '0')} / 0:${MAX_RECORDING_SECONDS}`;
+      recordingTimer.setAttribute('aria-label', `Recording time: ${seconds} seconds of ${MAX_RECORDING_SECONDS}`);
       if (elapsed >= MAX_RECORDING_SECONDS) stopRecording('limit');
     }, 200);
     setRecordingUi(true);
@@ -304,8 +304,8 @@ function setLanguage(code, { focusInput = true } = {}) {
   resetResults();
   queueTranslation();
   if (focusInput) input.focus();
-  setRecorderMessage(`Record one phrase in ${language.label}. Stops after 30 seconds or a short silence.`);
-  recordingHelp.textContent = `Record one phrase in ${language.label}. Press Space or Enter to start or stop recording. Recording stops after 30 seconds or a short silence.`;
+  setRecorderMessage(`Record one phrase in ${language.label}. Stops after ${MAX_RECORDING_SECONDS} seconds or a short silence.`);
+  recordingHelp.textContent = `Record one phrase in ${language.label}. Press Space or Enter to start or stop recording. Recording stops after ${MAX_RECORDING_SECONDS} seconds or a short silence.`;
 }
 
 function setPlaybackButton(button, status) {
