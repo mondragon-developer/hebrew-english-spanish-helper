@@ -20,3 +20,13 @@ export function createRequestGate() {
     invalidate() { current += 1; }
   };
 }
+
+export function getRadioNavigationTarget(codes, current, key) {
+  if (!codes.length) return null;
+  if (key === 'Home') return codes[0];
+  if (key === 'End') return codes[codes.length - 1];
+  const direction = ['ArrowRight', 'ArrowDown'].includes(key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(key) ? -1 : 0;
+  if (!direction) return null;
+  const index = Math.max(0, codes.indexOf(current));
+  return codes[(index + direction + codes.length) % codes.length];
+}

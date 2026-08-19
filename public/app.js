@@ -1,4 +1,4 @@
-import { LANGUAGES, createRequestGate, deriveControlState, getTargetLanguages } from './lib.js';
+import { LANGUAGES, createRequestGate, deriveControlState, getRadioNavigationTarget, getTargetLanguages } from './lib.js';
 import { MAX_RECORDING_SECONDS, SILENCE_SECONDS, SILENCE_THRESHOLD, blobToBase64, calculateRms, downsampleAudio, encodeWav } from './audio.js';
 
 const input = document.querySelector('#source-text');
@@ -37,6 +37,7 @@ function updateSourceControls() {
   sourceListen.disabled = !state.canListen;
   const count = [...input.value].length;
   counter.textContent = `${count} / 500`;
+  counter.setAttribute('aria-label', `${count} of 500 characters`);
   counter.classList.toggle('near-limit', count >= 450);
 }
 
@@ -46,9 +47,9 @@ function resultCard(code) {
   const controls = deriveControlState(state.text);
   const content = state.status === 'loading'
     ? '<div class="skeleton" aria-label="Translating"><span></span><span></span><span></span></div>'
-    : `<p class="result-text ${state.text ? '' : 'placeholder'}" lang="${code}" dir="${language.dir}">${escapeText(state.text || state.message)}</p>`;
-  return `<article class="panel result-panel" data-result="${code}" aria-busy="${state.status === 'loading'}">
-    <div class="result-language"><h3 lang="${code}" dir="${language.dir}">${language.nativeLabel}</h3><span>${language.label}</span></div>
+    : `<p class="result-text ${state.text ? '' : 'placeholder'}" ${state.status === 'error' ? 'role="status"' : ''} lang="${code}" dir="${language.dir}">${escapeText(state.text || state.message)}</p>`;
+  return `<article class="panel result-panel" data-result="${code}" aria-busy="${state.status === 'loading'}" aria-labelledby="result-${code}-title">
+    <div class="result-language"><h3 id="result-${code}-title" lang="${code}" dir="${language.dir}">${language.nativeLabel}</h3><span>${language.label}</span></div>
     ${content}
     <div class="result-actions">
       <button class="icon-button" type="button" data-action="listen" data-code="${code}" ${controls.canListen ? '' : 'disabled'} aria-label="Listen to ${language.label} translation"><span aria-hidden="true">▶</span><span>Listen</span></button>
@@ -90,6 +91,11 @@ function setRecordingUi(active, busy = false) {
   languageButtons.forEach((button) => { button.disabled = active || busy; });
 }
 
+function resetRecordingTimer() {
+  recordingTimer.textContent = '0:00 / 0:30';
+  recordingTimer.setAttribute('aria-label', 'Recording time: 0 seconds of 30');
+}
+
 async function stopRecording(reason = 'manual') {
   if (!recording || recording.stopping) return;
   recording.stopping = true;
@@ -103,13 +109,13 @@ async function stopRecording(reason = 'manual') {
   setRecordingUi(false, true);
   if (reason === 'offline') {
     setRecordingUi(false);
-    recordingTimer.textContent = '0:00 / 0:30';
+    resetRecordingTimer();
     setRecorderMessage('Connection lost. The recording was discarded because transcription requires internet.');
     return;
   }
   if (!state.voiceDetected || state.chunks.length === 0) {
     setRecordingUi(false);
-    recordingTimer.textContent = '0:00 / 0:30';
+    resetRecordingTimer();
     setRecorderMessage('No speech was detected. Move closer to the microphone and try again.');
     return;
   }
@@ -133,7 +139,7 @@ async function stopRecording(reason = 'manual') {
     setRecorderMessage(error.message || 'Speech transcription failed. Please try again.');
   } finally {
     setRecordingUi(false);
-    recordingTimer.textContent = '0:00 / 0:30';
+    resetRecordingTimer();
   }
 }
 
@@ -174,7 +180,9 @@ async function startRecording() {
     silentGain.connect(context.destination);
     state.timer = setInterval(() => {
       const elapsed = Math.min(MAX_RECORDING_SECONDS, (performance.now() - state.startedAt) / 1000);
-      recordingTimer.textContent = `0:${String(Math.floor(elapsed)).padStart(2, '0')} / 0:30`;
+      const seconds = Math.floor(elapsed);
+      recordingTimer.textContent = `0:${String(seconds).padStart(2, '0')} / 0:30`;
+      recordingTimer.setAttribute('aria-label', `Recording time: ${seconds} seconds of 30`);
       if (elapsed >= MAX_RECORDING_SECONDS) stopRecording('limit');
     }, 200);
     setRecordingUi(true);
@@ -252,7 +260,7 @@ function queueTranslation() {
   debounceTimer = setTimeout(translateNow, 500);
 }
 
-function setLanguage(code) {
+function setLanguage(code, { focusInput = true } = {}) {
   if (!LANGUAGES[code] || code === sourceLanguage) return;
   cancelPending();
   sourceLanguage = code;
@@ -260,10 +268,14 @@ function setLanguage(code) {
   input.lang = code;
   input.dir = language.dir;
   input.placeholder = `Start typing in ${language.label}…`;
-  languageButtons.forEach((button) => button.setAttribute('aria-checked', String(button.dataset.language === code)));
+  languageButtons.forEach((button) => {
+    const selected = button.dataset.language === code;
+    button.setAttribute('aria-checked', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
   resetResults();
   queueTranslation();
-  input.focus();
+  if (focusInput) input.focus();
   setRecorderMessage(`Record one phrase in ${language.label}. Stops after 30 seconds or a short silence.`);
 }
 
@@ -316,6 +328,13 @@ function updateNetworkStatus() {
 }
 
 languageButtons.forEach((button) => button.addEventListener('click', () => setLanguage(button.dataset.language)));
+document.querySelector('.language-tabs').addEventListener('keydown', (event) => {
+  const target = getRadioNavigationTarget(languageButtons.map((button) => button.dataset.language), sourceLanguage, event.key);
+  if (!target) return;
+  event.preventDefault();
+  setLanguage(target, { focusInput: false });
+  languageButtons.find((button) => button.dataset.language === target)?.focus();
+});
 input.addEventListener('input', queueTranslation);
 clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared. Enter text to begin.'; input.focus(); });
 sourceListen.addEventListener('click', () => speak(input.value, sourceLanguage));

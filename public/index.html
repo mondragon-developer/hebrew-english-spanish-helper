@@ -20,7 +20,7 @@
   <header class="site-header">
     <div class="brand"><img src="/icons/icon.svg" alt="" width="44" height="44"><span>Lingua Live</span></div>
     <div class="header-actions">
-      <span id="network-status" class="network-status" role="status"><span class="status-dot"></span><span>Online</span></span>
+      <span id="network-status" class="network-status" role="status" aria-live="polite" aria-atomic="true"><span class="status-dot" aria-hidden="true"></span><span>Online</span></span>
       <button id="install-button" class="button secondary" type="button" hidden>Install app</button>
     </div>
   </header>
@@ -37,11 +37,12 @@
         <div class="panel-heading">
           <div>
             <p class="panel-kicker">Translate from</p>
-            <div class="language-tabs" role="radiogroup" aria-label="Source language">
-              <button type="button" role="radio" aria-checked="false" data-language="he"><span lang="he" dir="rtl">עברית</span><small>Hebrew</small></button>
-              <button type="button" role="radio" aria-checked="true" data-language="en"><span>English</span><small>English</small></button>
-              <button type="button" role="radio" aria-checked="false" data-language="es"><span lang="es">Español</span><small>Spanish</small></button>
+            <div class="language-tabs" role="radiogroup" aria-label="Source language" aria-describedby="language-help">
+              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-language="he"><span lang="he" dir="rtl">עברית</span><small>Hebrew</small></button>
+              <button type="button" role="radio" aria-checked="true" tabindex="0" data-language="en"><span>English</span><small>English</small></button>
+              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-language="es"><span lang="es">Español</span><small>Spanish</small></button>
             </div>
+            <p id="language-help" class="sr-only">Use the arrow keys to change the source language.</p>
           </div>
           <button id="clear-button" class="icon-button" type="button" disabled aria-label="Clear source text" title="Clear text">
             <span aria-hidden="true">×</span><span>Clear</span>
@@ -52,10 +53,10 @@
         <div class="recorder" aria-labelledby="recorder-title">
           <div>
             <strong id="recorder-title">Speak instead</strong>
-            <p id="recording-status" role="status" aria-live="polite">Record one phrase in the selected language. Stops after 30 seconds or a short silence.</p>
+            <p id="recording-status" role="status" aria-live="polite" aria-atomic="true">Record one phrase in the selected language. Stops after 30 seconds or a short silence.</p>
           </div>
           <div class="recording-actions">
-            <span id="recording-timer" class="recording-timer" aria-hidden="true">0:00 / 0:30</span>
+            <span id="recording-timer" class="recording-timer" role="timer" aria-label="Recording time: 0 seconds of 30">0:00 / 0:30</span>
             <button id="record-button" class="button record-button" type="button" aria-pressed="false"><span aria-hidden="true">●</span><span>Record</span></button>
           </div>
         </div>
@@ -63,14 +64,14 @@
           <p id="source-help">Translations appear after a short pause.</p>
           <div class="footer-actions">
             <button id="source-listen" class="icon-button" type="button" disabled aria-label="Listen to source text"><span aria-hidden="true">▶</span><span>Listen</span></button>
-            <span id="character-count" class="counter">0 / 500</span>
+            <span id="character-count" class="counter" aria-label="0 of 500 characters">0 / 500</span>
           </div>
         </div>
       </article>
 
       <div class="results-heading">
         <div><p class="panel-kicker">Translations</p><h2>Both at once</h2></div>
-        <p id="global-status" class="global-status" role="status" aria-live="polite">Enter text to begin.</p>
+        <p id="global-status" class="global-status" role="status" aria-live="polite" aria-atomic="true">Enter text to begin.</p>
       </div>
       <div id="results" class="results-grid"></div>
     </section>

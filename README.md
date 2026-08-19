@@ -8,6 +8,10 @@ Lingua Live is a fast, accessible translator for Hebrew, English, and Spanish. S
 
 The application is designed for phones, iPads, tablets, desktop browsers, and installation as a Progressive Web App (PWA).
 
+## Accessibility
+
+Lingua Live targets WCAG 2.2 Level AA with keyboard operation, visible focus, screen-reader status messages, Hebrew language and direction metadata, reduced-motion support, responsive reflow, and accessible touch controls. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for supported features, automated checks, the required manual test matrix, and accessibility issue reporting.
+
 ## Features
 
 - Translates every direction between Hebrew, English, and Spanish
