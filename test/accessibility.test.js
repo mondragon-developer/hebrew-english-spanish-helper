@@ -98,7 +98,7 @@ test('focus indicator is at least 2px thick and included on translation panels',
   assert.ok(Number(focusRule.match(/outline: (\d+)px/)?.[1] ?? 0) >= 2);
 });
 
-test('translation column uses concise multimodal instructions without an initial status prompt', async () => {
+test('translation column uses concise multimodal instructions and matches the source panel height on desktop', async () => {
   const html = await readFile('public/index.html', 'utf8');
   const app = await readFile('public/app.js', 'utf8');
   const css = await readFile('public/styles.css', 'utf8');
@@ -107,5 +107,8 @@ test('translation column uses concise multimodal instructions without an initial
   assert.doesNotMatch(html, />Enter text to begin\.</);
   assert.doesNotMatch(app, /Enter text to begin/);
   assert.match(html, /<section class="translations-column" aria-labelledby="translations-title">/);
-  assert.match(css, /@media \(min-width: 1200px\) \{ \.translations-column \{ margin-top: -4\.5rem; \} \}/);
+  assert.match(css, /\.translator \{ grid-template-columns: minmax\(0, 1\.2fr\) minmax\(0, 1fr\); align-items: stretch; \}/);
+  assert.match(css, /\.results-grid \{ min-height: 0; grid-template-columns: 1fr; grid-template-rows: repeat\(2, minmax\(0, 1fr\)\); \}/);
+  assert.match(css, /\.result-panel \{ min-height: 0; \}/);
+  assert.match(css, /bottom: calc\(100% \+ \.65rem\)/);
 });
