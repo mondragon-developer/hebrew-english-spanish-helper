@@ -44,13 +44,13 @@
             </div>
             <p id="language-help" class="sr-only">Use the arrow keys to change the source language.</p>
           </div>
-          <button id="clear-button" class="icon-button" type="button" disabled aria-label="Clear source text" title="Clear text">
-            <span aria-hidden="true">×</span><span>Clear</span>
+          <button id="clear-button" class="icon-button" type="button" disabled title="Clear text">
+            <span aria-hidden="true">×</span><span>Clear</span><span class="sr-only"> source text</span>
           </button>
         </div>
         <label class="sr-only" for="source-text">Text to translate</label>
         <textarea id="source-text" maxlength="500" rows="7" lang="en" dir="ltr" placeholder="Start typing in English…" aria-describedby="source-help character-count"></textarea>
-        <div class="recorder" aria-labelledby="recorder-title">
+        <div class="recorder" role="group" aria-labelledby="recorder-title">
           <div>
             <strong id="recorder-title">Speak instead</strong>
             <p id="recording-help" class="sr-only">Record one phrase in English. Press Space or Enter to start or stop recording. Recording stops after 30 seconds or a short silence.</p>
@@ -64,8 +64,8 @@
         <div class="panel-footer">
           <p id="source-help">Translations appear after a short pause.</p>
           <div class="footer-actions">
-            <button id="source-listen" class="icon-button" type="button" disabled aria-label="Listen to source text"><span aria-hidden="true">▶</span><span>Listen</span></button>
-            <span id="character-count" class="counter" aria-label="0 of 500 characters">0 / 500</span>
+            <button id="source-listen" class="icon-button" type="button" disabled><span aria-hidden="true">▶</span><span>Listen</span><span class="sr-only"> to source text</span></button>
+            <span id="character-count" class="counter">0 of 500 characters</span>
           </div>
         </div>
       </article>

@@ -48,3 +48,21 @@ test('record button has stable keyboard and recording instructions', async () =>
   assert.match(help, /Press Space or Enter to start or stop recording/);
   assert.match(help, /30 seconds or a short silence/);
 });
+
+test('visible button labels are included directly in accessible names', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  const app = await readFile('public/app.js', 'utf8');
+  assert.doesNotMatch(html, /id="clear-button"[^>]*aria-label/);
+  assert.doesNotMatch(html, /id="source-listen"[^>]*aria-label/);
+  assert.doesNotMatch(app, /aria-label="(?:Listen|Copy) to? \$\{language\.label\}/);
+  assert.match(html, /<span>Clear<\/span><span class="sr-only"> source text<\/span>/);
+  assert.match(app, /<span>Copy<\/span><span class="sr-only"> \$\{language\.label\} translation<\/span>/);
+});
+
+test('ARIA labels are used only with supported recorder and counter semantics', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  assert.match(html, /class="recorder" role="group" aria-labelledby="recorder-title"/);
+  const counter = html.match(/<span id="character-count"[^>]*>/)?.[0] ?? '';
+  assert.doesNotMatch(counter, /aria-label/);
+  assert.match(html, /id="character-count" class="counter">0 of 500 characters/);
+});
