@@ -11,6 +11,7 @@ const networkStatus = document.querySelector('#network-status');
 const toast = document.querySelector('#toast');
 const installButton = document.querySelector('#install-button');
 const recordButton = document.querySelector('#record-button');
+const recordingHelp = document.querySelector('#recording-help');
 const recordingStatus = document.querySelector('#recording-status');
 const recordingTimer = document.querySelector('#recording-timer');
 const languageButtons = [...document.querySelectorAll('[data-language]')];
@@ -277,6 +278,7 @@ function setLanguage(code, { focusInput = true } = {}) {
   queueTranslation();
   if (focusInput) input.focus();
   setRecorderMessage(`Record one phrase in ${language.label}. Stops after 30 seconds or a short silence.`);
+  recordingHelp.textContent = `Record one phrase in ${language.label}. Press Space or Enter to start or stop recording. Recording stops after 30 seconds or a short silence.`;
 }
 
 function speak(text, code) {

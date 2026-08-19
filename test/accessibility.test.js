@@ -39,3 +39,12 @@ test('dynamic status regions are polite and atomic', async () => {
     assert.match(element, /aria-atomic="true"/);
   }
 });
+
+test('record button has stable keyboard and recording instructions', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  const button = html.match(/<button id="record-button"[^>]*>/)?.[0] ?? '';
+  const help = html.match(/<p id="recording-help"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '';
+  assert.match(button, /aria-describedby="recording-help"/);
+  assert.match(help, /Press Space or Enter to start or stop recording/);
+  assert.match(help, /30 seconds or a short silence/);
+});
