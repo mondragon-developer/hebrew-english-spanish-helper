@@ -1,103 +1,285 @@
 # Lingua Live
 
-Lingua Live is a fast, responsive translator for Hebrew, English, and Spanish. Select one source language, type up to 500 characters, and see translations in both remaining languages after a 500 ms pause.
+Lingua Live is a fast, accessible translator for Hebrew, English, and Spanish. Select a source language, type or record a short phrase, and receive translations in both remaining languages.
+
+The application is designed for phones, iPads, tablets, desktop browsers, and installation as a Progressive Web App (PWA).
 
 ## Features
 
-- All six translation directions, with both target languages shown together
-- Cancelled and stale-request protection, empty/loading/success/offline/rate-limit/error states
-- Copy confirmation and system text-to-speech controls
-- Push-to-talk speech transcription with a 30-second cap and automatic silence stop
-- Correct Hebrew RTL plus `lang`/`dir` metadata
-- Phone, tablet, landscape, desktop, keyboard, touch, and screen-reader support
-- Installable PWA with versioned app-shell caching and offline fallback
-- No accounts, analytics, cookies, or translation-text logging
-- Same-origin serverless API with validation, timeout handling, and consistent errors
+- Translates every direction between Hebrew, English, and Spanish
+- Displays both target-language translations together
+- Supports typed input and Azure-powered speech transcription
+- Translates after a 500 ms pause without sending empty requests
+- Cancels obsolete requests and prevents stale results
+- Enforces a 500-character text limit
+- Records one phrase for up to 30 seconds
+- Stops recording after approximately 1.75 seconds of silence
+- Enforces a 3 MB audio limit in both browser and API
+- Allows only one selected recording language and one active recording
+- Provides copy and device text-to-speech controls
+- Applies Hebrew right-to-left direction automatically
+- Handles empty, loading, success, offline, quota, timeout, and error states
+- Installs as a PWA with an offline application shell
+- Does not include accounts, analytics, cookies, or advertising trackers
+
+## Supported languages
+
+| Language | Translation code | Speech locale | Direction |
+| --- | --- | --- | --- |
+| Hebrew | `he` | `he-IL` | Right to left |
+| English | `en` | `en-US` | Left to right |
+| Spanish | `es` | `es-ES` | Left to right |
+
+## Using Lingua Live
+
+### Translate typed text
+
+1. Select Hebrew, English, or Spanish as the source language.
+2. Enter up to 500 characters.
+3. Pause briefly while Lingua Live requests both translations.
+4. Use **Copy** to copy a result or **Listen** to hear it with a compatible system voice.
+5. Use **Clear** to reset the source and results.
+
+### Translate speech
+
+1. Select the language you intend to speak.
+2. Select **Record** and allow microphone access when prompted.
+3. Speak one short phrase clearly.
+4. Select **Stop**, remain quiet for approximately 1.75 seconds, or wait for the 30-second limit.
+5. Review the transcript in the source field. Lingua Live then translates it into both remaining languages.
+
+Record one speaker at a time. Speech transcription requires an internet connection and configured Azure credentials.
+
+### Improve voice playback on iPad
+
+Lingua Live currently uses voices installed on the device for its **Listen** controls. Installing a higher-quality iPad voice can make playback sound more natural.
+
+On supported iPadOS versions, open:
+
+```text
+Settings → Accessibility → Read & Speak → Voices → Language → Voice preference
+```
+
+Choose Hebrew, English, or Spanish, then download and select an enhanced or preferred voice when available. Menu wording can vary slightly by iPadOS version, language, or region. Voice downloads require storage space and may require Wi-Fi.
+
+Changing the iPad voice improves playback on that device; it does not change translation or Azure speech-to-text accuracy.
+
+## Progressive Web App
+
+Installing Lingua Live provides:
+
+- A dedicated application window without normal browser tabs
+- An application icon on the home screen, Dock, Start menu, or app launcher
+- Faster repeat loading of static interface files
+- An interface that can open without a network connection
+- A standalone layout with more usable screen space
+
+New translations and speech transcription still require internet access. The service worker caches only the application shell and static assets; it does not cache translation requests, recorded audio, transcripts, or user-entered text.
+
+### Installation
+
+- **Android and supported desktop browsers:** select the browser install control or Lingua Live's **Install app** button when available.
+- **iPhone and iPad:** open Lingua Live in Safari, select **Share**, then **Add to Home Screen**.
 
 ## Architecture
 
-The dependency-light frontend is static HTML, CSS, and JavaScript in `public/`. Vercel serves the production build from `dist/`; `api/translate.js` and `api/transcribe.js` are same-origin Node serverless functions. Provider details live in isolated adapters, so the frontend can retain the same API contracts if providers change.
+```text
+Browser / installed PWA
+  ├─ typed text ────────→ /api/translate ──→ MyMemory
+  ├─ 16 kHz mono WAV ───→ /api/transcribe ─→ Azure AI Speech
+  └─ Listen controls ───→ installed system voices
+```
 
-The initial adapter uses the public [MyMemory Translation API](https://mymemory.translated.net/doc/spec.php). It supports the required language pairs, but needs internet access and has public usage limits. No availability, accuracy, or pricing guarantee is implied. `MYMEMORY_EMAIL` is optional and can be used for quota attribution. Never commit real environment files.
+The frontend is dependency-free HTML, CSS, and JavaScript under `public/`. Vercel serves the production build from `dist/` and runs the same-origin Node serverless functions under `api/`.
 
-Translation text is sent from the browser to this app's endpoint and then to MyMemory. Lingua Live does not persist or log it. Machine translation can be inaccurate; review important translations with a fluent speaker.
+Provider-specific logic is isolated in server-side adapters:
 
-Speech transcription uses Azure AI Speech. The browser records 16 kHz, 16-bit mono WAV audio; recording stops after 30 seconds or approximately 1.75 seconds of silence after speech begins. Only one selected language and one recording are active at a time. Both browser and server enforce a 3 MB audio limit. The same-origin API validates the language, format, size, and duration before sending audio to Azure. Lingua Live does not store or log recorded audio.
+- `api/_lib/provider.js` — MyMemory translation
+- `api/_lib/speech-provider.js` — Azure AI Speech transcription
+
+This keeps credentials out of browser code and allows either provider to be replaced without redesigning the interface.
+
+## Usage limits
+
+### MyMemory translation
+
+MyMemory measures free usage by submitted characters:
+
+- Anonymous: approximately 5,000 characters per day
+- With a valid `MYMEMORY_EMAIL`: approximately 50,000 characters per day
+
+Lingua Live requests two translations for each source entry, so a 100-character source phrase consumes roughly 200 submitted characters. At that average size, the theoretical capacity is approximately 25 translation actions per day without an email or 250 per day with an email.
+
+Actual usage can be lower because every pause during typing can initiate another pair of translations. Quotas may also be shared by traffic leaving the same server infrastructure. Public API limits and policies can change; consult the provider documentation before relying on these estimates.
+
+### Azure AI Speech F0
+
+The Azure F0 tier currently provides approximately five audio hours of speech-to-text per month with one concurrent request. That is theoretically:
+
+- 600 recordings at 30 seconds each
+- 1,200 recordings at 15 seconds each
+
+Unused allowance does not guarantee availability, accuracy, or future pricing. When the quota is unavailable, Lingua Live returns a user-friendly quota message rather than retrying continuously.
+
+## Privacy and security
+
+- Translation text is sent to the same-origin API and then to MyMemory.
+- Recorded audio is sent to the same-origin API and then to Azure AI Speech.
+- Lingua Live does not intentionally store or log translation text, transcripts, or recorded audio.
+- Translation and transcription responses use `Cache-Control: no-store`.
+- The service worker excludes every `/api/` request.
+- Azure credentials are read only on the server.
+- Microphone access requires an explicit browser permission.
+- Security headers restrict framing, unnecessary device permissions, and external scripts.
+- Machine translation and speech recognition may be inaccurate; review important content with a fluent speaker.
+
+Review the current MyMemory and Microsoft privacy terms before using the application with confidential, regulated, or sensitive information.
+
+## Environment variables
+
+Text translation works without environment variables. Speech transcription requires the Azure variables below.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `TRANSLATION_PROVIDER` | No | Translation adapter; defaults to `mymemory` |
+| `MYMEMORY_EMAIL` | No | Valid contact email used for MyMemory quota attribution |
+| `AZURE_SPEECH_KEY` | For recording | Secret key from the Azure AI Speech resource |
+| `AZURE_SPEECH_REGION` | For recording | Exact Azure resource region, such as `eastus` |
+
+Never place real secrets in `.env.example`, `public/`, GitHub commits, issues, pull requests, screenshots, or logs.
 
 ## Local development
 
-Requires Node.js 20 or later.
+Requirements:
+
+- Node.js 20 or newer
+- A linked Vercel project for local serverless API testing
+
+Install dependencies and run all checks:
 
 ```bash
 npm install
-npm run dev # static UI preview; use npx vercel dev for API routes
+npm run check
 ```
 
-Useful commands:
+Run a static UI preview without API functions:
 
 ```bash
-npm test          # meaningful Node test suite
-npm run lint      # repository style checks
-npm run typecheck # JavaScript syntax checks
-npm run build     # production build in dist/
-npm run preview   # dependency-free static production preview
-npm run check     # all validation and build steps
+npm run dev
 ```
 
-The optional environment settings are:
+Run the complete application with Vercel functions:
 
-| Variable | Purpose |
+```bash
+vercel link
+vercel env pull .env.local
+npx vercel dev
+```
+
+`.env.local` is ignored by Git. The `.env.example` file is hidden by default on Unix-like systems; use `ls -la` to display it.
+
+Available scripts:
+
+| Command | Purpose |
 | --- | --- |
-| `TRANSLATION_PROVIDER` | Provider selector; currently defaults to and accepts `mymemory` |
-| `MYMEMORY_EMAIL` | Optional contact email passed to MyMemory for quota attribution |
-| `AZURE_SPEECH_KEY` | Required for microphone transcription; Azure AI Speech resource key |
-| `AZURE_SPEECH_REGION` | Required for microphone transcription; resource region such as `eastus` |
+| `npm run dev` | Build and serve a static local UI preview |
+| `npm run build` | Create the production `dist/` directory |
+| `npm run preview` | Serve the existing production build |
+| `npm test` | Run behavioral tests with Node's test runner |
+| `npm run lint` | Run repository style checks |
+| `npm run typecheck` | Run JavaScript syntax checks |
+| `npm run check` | Run lint, syntax checks, tests, and build |
 
-Translation works without environment variables. Microphone transcription remains disabled at the server until both Azure values are configured. Never expose the Azure key in frontend JavaScript or commit it to GitHub.
+## Deploying to Vercel
 
-## Deploy to Vercel
+1. Import `mondragon-developer/hebrew-english-spanish-helper` into Vercel.
+2. Select `main` as the Production Branch.
+3. Keep the build command as `npm run build` and output directory as `dist`.
+4. In **Project → Settings → Environment Variables**, add `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` for Development, Preview, and Production.
+5. Optionally add `MYMEMORY_EMAIL` and `TRANSLATION_PROVIDER=mymemory`.
+6. Redeploy after adding or changing environment variables.
+7. Verify the assigned HTTPS production URL.
 
-1. In Vercel, choose **Add New → Project** and import `mondragon-developer/hebrew-english-spanish-helper` from GitHub.
-2. Select `main` as the Production Branch (or the repository's current default branch).
-3. Vercel reads `vercel.json`; keep the build command as `npm run build` and output directory as `dist`.
-4. Optionally configure `MYMEMORY_EMAIL` and `TRANSLATION_PROVIDER=mymemory`. For speech transcription, configure `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` for Development, Preview, and Production. The Azure key is a secret.
-5. Deploy, open the assigned HTTPS production URL, and confirm `/api/translate` responds to the app. Do not set a localhost or deployment-specific API URL.
+Do not hard-code localhost or deployment-specific Vercel URLs. Both APIs are intentionally same-origin.
 
-GitHub-connected Vercel projects normally create a preview deployment for this pull request and a production deployment after merge to the production branch. Confirm these deployments in the Vercel dashboard rather than assuming success from the repository build alone.
+## Testing
 
-## Install the PWA
+The automated suite covers:
 
-- **Android / supported desktop browsers:** use the in-app **Install app** button when shown, or the browser's Install option.
-- **iPhone / iPad:** open the production URL in Safari, tap **Share**, then **Add to Home Screen**.
+- Supported languages and target calculation
+- Translation validation, provider success, failure, and timeout behavior
+- Copy/listen control state and Hebrew RTL
+- Language switching and stale-response prevention
+- Audio energy calculation and 16 kHz downsampling
+- WAV encoding and speech input validation
+- Azure success, no-speech, quota, and timeout behavior
+- Manifest, icons, and service-worker API exclusions
+- Production build completion
 
-The application shell opens offline, but new or refreshed translations always require an internet connection. Translation API responses and entered text are never cached by the service worker. The worker uses a versioned, network-first shell strategy so releases are not held indefinitely.
+Run the complete pipeline:
 
-## Mobile and iPad support
+```bash
+npm run check
+```
 
-The layout stacks on phones, becomes a two-column results layout on tablets, and uses a split workspace on desktop. It includes 44px touch targets, 16px-or-larger form text to avoid iOS focus zoom, safe-area padding, dynamic viewport units, visible focus indicators, flexible wrapping, landscape tuning, and reduced-motion support. No essential control is fixed over the virtual keyboard.
-
-## Troubleshooting
-
-- **Translation:** confirm you are online. A timeout or provider-limit message can be retried later. MyMemory is a public third-party service with finite capacity.
-- **Speech:** browser speech synthesis and installed voices vary by OS. Install an appropriate Hebrew, English, or Spanish system voice if prompted. iOS may require a direct user tap before playback.
-- **Microphone transcription:** requires HTTPS or localhost, explicit microphone permission, internet access, and configured Azure Speech variables. On iPhone/iPad, allow microphone access for Safari or the installed PWA. Record one speaker at a time. A 401/403 usually means the key and region do not match; 429 can mean the Azure F0 quota or concurrency limit was reached.
-- **Clipboard:** HTTPS or localhost is normally required. If browser policy denies access, select and copy the displayed text manually.
-- **Offline:** only the interface and static assets work offline. Reconnect before entering text that needs translation.
-- **Old app shell:** reload once while online. If necessary, remove and reinstall the PWA to refresh browser-managed assets.
-
-## Post-deployment checklist
+### Post-deployment checklist
 
 - [ ] Hebrew → English and Spanish
 - [ ] English → Hebrew and Spanish
 - [ ] Spanish → Hebrew and English
-- [ ] Copy controls and visible confirmation
-- [ ] Source and result speech controls, including missing-voice messaging
-- [ ] Microphone permission, manual stop, 30-second stop, and silence stop
-- [ ] Hebrew, English, and Spanish recordings produce editable transcripts
-- [ ] Phone portrait and landscape layout (representative 390×844 viewport)
-- [ ] iPad portrait (768×1024) and landscape (1024×768)
-- [ ] Desktop layout (representative 1440×900)
-- [ ] Keyboard navigation, focus visibility, and screen-reader announcements
-- [ ] Install on Android/desktop and via iOS/iPadOS Add to Home Screen
-- [ ] Offline application shell loads and clearly blocks new translations
-- [ ] Translation requests are absent from Cache Storage
+- [ ] Hebrew, English, and Spanish microphone transcription
+- [ ] Manual stop, silence stop, and 30-second stop
+- [ ] Copy confirmation and Listen controls
+- [ ] Missing voice and denied microphone messages
+- [ ] Phone portrait and landscape layout
+- [ ] iPad portrait and landscape layout
+- [ ] Desktop layout
+- [ ] Keyboard navigation and visible focus states
+- [ ] PWA installation
+- [ ] Offline application-shell behavior
+- [ ] No translation or transcription requests in Cache Storage
+
+## Troubleshooting
+
+### Translation fails or reaches a limit
+
+Confirm the device is online. Wait before retrying after a quota message. Adding a valid `MYMEMORY_EMAIL` increases the documented public character allowance but does not create a service guarantee.
+
+### Microphone recording does not start
+
+- Confirm the page uses HTTPS or localhost.
+- Allow microphone access in the browser or operating-system settings.
+- On iPad, check Safari or the installed PWA's microphone permission.
+- Close other applications using the microphone and retry.
+
+### Speech transcription is not configured
+
+Confirm both `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` exist in the active Vercel environment, then redeploy. The region must be the resource identifier such as `eastus`, not a display label or endpoint URL.
+
+### Azure returns 401, 403, or 429
+
+- `401` or `403`: the key is invalid, expired, or does not match the configured region.
+- `429`: the F0 quota or one-concurrent-request limit may have been reached.
+
+Rotate the Azure key immediately if it is exposed.
+
+### Listen sounds robotic or no voice is available
+
+Lingua Live uses system voices. Install a higher-quality voice using the iPad path documented above or the equivalent speech/voice settings on the device. Voice availability varies by operating system, browser, language, and region.
+
+### The interface opens offline but translation does not work
+
+This is expected. Only the application shell is available offline. Translation and speech transcription require network services.
+
+## Known limitations
+
+- Translation and transcription require internet access.
+- MyMemory and Azure F0 are usage-limited external services.
+- Listen voice quality depends on the device's installed voices.
+- Lingua Live does not currently provide Azure neural text-to-speech.
+- Automatic language detection is intentionally not used; the speaker selects one language per turn.
+- Overlapping speakers and noisy environments reduce transcription quality.
+
+## License
+
+No license has been added yet. Unless a license file is introduced, normal copyright restrictions apply.
