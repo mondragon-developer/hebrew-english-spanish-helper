@@ -218,7 +218,7 @@ async function translateNow() {
   const text = input.value;
   if (!text.trim()) {
     resetResults();
-    globalStatus.textContent = 'Enter text to begin.';
+    globalStatus.textContent = '';
     return;
   }
   if (!navigator.onLine) {
@@ -279,7 +279,7 @@ function queueTranslation() {
   updateSourceControls();
   if (!input.value.trim()) {
     resetResults();
-    globalStatus.textContent = 'Enter text to begin.';
+    globalStatus.textContent = '';
     return;
   }
   globalStatus.textContent = navigator.onLine ? 'Waiting for you to pause…' : 'Offline — translation needs internet.';
@@ -363,7 +363,7 @@ document.querySelector('.language-tabs').addEventListener('keydown', (event) => 
   languageButtons.find((button) => button.dataset.language === target)?.focus();
 });
 input.addEventListener('input', queueTranslation);
-clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared. Enter text to begin.'; input.focus(); });
+clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared.'; input.focus(); });
 sourceListen.addEventListener('click', () => speak(input.value, sourceLanguage));
 results.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');

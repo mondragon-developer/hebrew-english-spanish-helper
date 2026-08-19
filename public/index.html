@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b4533c">
-  <meta name="description" content="Translate Hebrew, English, and Spanish into both other languages as you type.">
+  <meta name="description" content="Type or speak in Hebrew, Spanish, or English and translate into both other languages.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -29,7 +29,7 @@
     <section class="hero" aria-labelledby="page-title">
       <p class="eyebrow">Three languages. One thought.</p>
       <h1 id="page-title">Say it in every language.</h1>
-      <p>Type in Hebrew, English, or Spanish and see both other translations as you write.</p>
+      <p>Type or speak in Hebrew, Spanish, or English and see both other translations as you write or after you speak.</p>
     </section>
 
     <section class="translator" aria-label="Live translator">
@@ -70,11 +70,13 @@
         </div>
       </article>
 
-      <div class="results-heading">
-        <div><p class="panel-kicker">Translations</p><h2 id="translations-title">Both at once</h2></div>
-        <p id="global-status" class="global-status" role="status" aria-live="polite" aria-atomic="true">Enter text to begin.</p>
-      </div>
-      <div id="results" class="results-grid" aria-labelledby="translations-title"></div>
+      <section class="translations-column" aria-labelledby="translations-title">
+        <div class="results-heading">
+          <div><p class="panel-kicker">Translations</p><h2 id="translations-title">Both at once</h2></div>
+          <p id="global-status" class="global-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+        <div id="results" class="results-grid" aria-labelledby="translations-title"></div>
+      </section>
     </section>
     <p class="privacy-note">Translations and transcripts are machine-generated and may not be exact. Text and recorded audio are sent only to complete your request and are not stored by Lingua Live.</p>
   </main>

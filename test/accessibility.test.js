@@ -97,3 +97,15 @@ test('focus indicator is at least 2px thick and included on translation panels',
   assert.match(focusRule, /\.result-panel:focus-visible/);
   assert.ok(Number(focusRule.match(/outline: (\d+)px/)?.[1] ?? 0) >= 2);
 });
+
+test('translation column uses concise multimodal instructions without an initial status prompt', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  const app = await readFile('public/app.js', 'utf8');
+  const css = await readFile('public/styles.css', 'utf8');
+  assert.match(html, /Type or speak in Hebrew, Spanish, or English/);
+  assert.match(html, /as you write or after you speak/);
+  assert.doesNotMatch(html, />Enter text to begin\.</);
+  assert.doesNotMatch(app, /Enter text to begin/);
+  assert.match(html, /<section class="translations-column" aria-labelledby="translations-title">/);
+  assert.match(css, /@media \(min-width: 1200px\) \{ \.translations-column \{ margin-top: -4\.5rem; \} \}/);
+});
