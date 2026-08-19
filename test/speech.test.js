@@ -28,6 +28,15 @@ test('accepts supported language and valid short WAV audio', () => {
   assert.equal(input.audio.length, 32044);
 });
 
+test('rejects WAV headers that lie about byte rate or payload length', () => {
+  const invalidRate = wav();
+  invalidRate.writeUInt32LE(1, 28);
+  assert.throws(() => parseSpeechInput({ language: 'en', mimeType: 'audio/wav', audio: invalidRate.toString('base64') }), { code: 'UNSUPPORTED_AUDIO' });
+
+  const trailingData = Buffer.concat([wav(), Buffer.from([0])]);
+  assert.throws(() => parseSpeechInput({ language: 'en', mimeType: 'audio/wav', audio: trailingData.toString('base64') }), /incomplete/);
+});
+
 for (const [name, body, code] of [
   ['unsupported language', { language: 'fr', mimeType: 'audio/wav', audio: wav().toString('base64') }, 'UNSUPPORTED_LANGUAGE'],
   ['unsupported format', { language: 'en', mimeType: 'audio/mp4', audio: wav().toString('base64') }, 'UNSUPPORTED_AUDIO'],
