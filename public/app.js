@@ -1,4 +1,4 @@
-import { LANGUAGES, createRequestGate, deriveControlState, getRadioNavigationTarget, getTargetLanguages } from './lib.js';
+import { LANGUAGES, createBoundedCache, createRequestGate, deriveControlState, getRadioNavigationTarget, getTargetLanguages } from './lib.js';
 import { MAX_RECORDING_SECONDS, SILENCE_SECONDS, SILENCE_THRESHOLD, blobToBase64, calculateRms, downsampleAudio, encodeWav } from './audio.js';
 
 const input = document.querySelector('#source-text');
@@ -22,6 +22,7 @@ let controller;
 let deferredInstallPrompt;
 let toastTimer;
 const requestGate = createRequestGate();
+const translationCache = createBoundedCache(50);
 const resultState = new Map();
 let recording;
 
@@ -193,11 +194,15 @@ async function startRecording() {
   }
 }
 
-async function requestTranslation(text, target, signal) {
+function translationCacheKey(text, source, target) {
+  return `${source}\u0000${target}\u0000${text}`;
+}
+
+async function requestTranslations(text, targets, signal) {
   const response = await fetch('/api/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, source: sourceLanguage, target }),
+    body: JSON.stringify({ text, source: sourceLanguage, targets }),
     signal
   });
   const payload = await response.json().catch(() => null);
@@ -206,14 +211,14 @@ async function requestTranslation(text, target, signal) {
     error.code = payload?.error?.code;
     throw error;
   }
-  return payload.data.translation;
+  return payload.data;
 }
 
 async function translateNow() {
   const text = input.value;
   if (!text.trim()) {
     resetResults();
-    globalStatus.textContent = 'Enter text to begin.';
+    globalStatus.textContent = '';
     return;
   }
   if (!navigator.onLine) {
@@ -225,26 +230,47 @@ async function translateNow() {
   controller = new AbortController();
   const requestId = requestGate.next();
   const targets = getTargetLanguages(sourceLanguage);
-  targets.forEach((code) => resultState.set(code, { status: 'loading', text: '', message: '' }));
+  const missingTargets = [];
+  targets.forEach((code) => {
+    const cached = translationCache.get(translationCacheKey(text, sourceLanguage, code));
+    if (cached === undefined) {
+      missingTargets.push(code);
+      resultState.set(code, { status: 'loading', text: '', message: '' });
+    } else resultState.set(code, { status: 'success', text: cached, message: '' });
+  });
   renderResults();
-  globalStatus.textContent = 'Translating into both languages…';
+  if (!missingTargets.length) {
+    globalStatus.textContent = 'Translations ready from this session.';
+    return;
+  }
+  globalStatus.textContent = missingTargets.length === 2 ? 'Translating into both languages…' : 'Translating the remaining language…';
 
-  const outcomes = await Promise.allSettled(targets.map((code) => requestTranslation(text, code, controller.signal)));
+  let payload;
+  try {
+    payload = await requestTranslations(text, missingTargets, controller.signal);
+  } catch (error) {
+    if (!requestGate.isCurrent(requestId) || error?.name === 'AbortError') return;
+    missingTargets.forEach((code) => resultState.set(code, { status: 'error', text: '', message: error?.message || 'Translation failed. Please try again.' }));
+    renderResults();
+    globalStatus.textContent = 'Translations could not be completed.';
+    return;
+  }
   if (!requestGate.isCurrent(requestId)) return;
-  let successCount = 0;
-  outcomes.forEach((outcome, index) => {
-    const code = targets[index];
-    if (outcome.status === 'fulfilled') {
-      successCount += 1;
-      resultState.set(code, { status: 'success', text: outcome.value, message: '' });
-    } else if (outcome.reason?.name !== 'AbortError') {
-      const message = outcome.reason?.code === 'RATE_LIMITED'
+  missingTargets.forEach((code) => {
+    if (typeof payload.translations?.[code] === 'string') {
+      const translation = payload.translations[code];
+      translationCache.set(translationCacheKey(text, sourceLanguage, code), translation);
+      resultState.set(code, { status: 'success', text: translation, message: '' });
+    } else {
+      const failure = payload.errors?.[code];
+      const message = failure?.code === 'RATE_LIMITED'
         ? 'Public translation limit reached. Please wait and try again.'
-        : outcome.reason?.message || 'Translation failed. Please try again.';
+        : failure?.message || 'Translation failed. Please try again.';
       resultState.set(code, { status: 'error', text: '', message });
     }
   });
   renderResults();
+  const successCount = targets.filter((code) => resultState.get(code)?.status === 'success').length;
   globalStatus.textContent = successCount === 2 ? 'Translations ready.' : successCount === 1 ? 'One translation is ready; one could not be completed.' : 'Translations could not be completed.';
 }
 
@@ -253,7 +279,7 @@ function queueTranslation() {
   updateSourceControls();
   if (!input.value.trim()) {
     resetResults();
-    globalStatus.textContent = 'Enter text to begin.';
+    globalStatus.textContent = '';
     return;
   }
   globalStatus.textContent = navigator.onLine ? 'Waiting for you to pause…' : 'Offline — translation needs internet.';
@@ -337,7 +363,7 @@ document.querySelector('.language-tabs').addEventListener('keydown', (event) => 
   languageButtons.find((button) => button.dataset.language === target)?.focus();
 });
 input.addEventListener('input', queueTranslation);
-clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared. Enter text to begin.'; input.focus(); });
+clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared.'; input.focus(); });
 sourceListen.addEventListener('click', () => speak(input.value, sourceLanguage));
 results.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');

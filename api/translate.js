@@ -1,5 +1,5 @@
-import { ProviderError, translateText } from './_lib/provider.js';
-import { ValidationError, validateTranslationInput } from './_lib/validation.js';
+import { ProviderError, translateTargets, translateText } from './_lib/provider.js';
+import { ValidationError, validateBatchTranslationInput, validateTranslationInput } from './_lib/validation.js';
 import { checkRateLimit, isJsonRequest } from './_lib/security.js';
 
 function send(response, status, payload) {
@@ -16,13 +16,19 @@ export default async function handler(request, response) {
   if (!isJsonRequest(request)) {
     return send(response, 415, { ok: false, error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Send translation requests as JSON.' } });
   }
-  const rate = checkRateLimit('translate', request, { limit: 60, windowMs: 60_000 });
+  const batchCost = Array.isArray(request.body?.targets) ? Math.min(2, Math.max(1, request.body.targets.length)) : 1;
+  const rate = checkRateLimit('translate', request, { limit: 60, windowMs: 60_000, cost: batchCost });
   response.setHeader('X-RateLimit-Remaining', String(rate.remaining));
   if (!rate.allowed) {
     response.setHeader('Retry-After', String(rate.retryAfter));
     return send(response, 429, { ok: false, error: { code: 'RATE_LIMITED', message: 'Too many translation requests. Please wait and try again.' } });
   }
   try {
+    if (Array.isArray(request.body?.targets)) {
+      const input = validateBatchTranslationInput(request.body);
+      const result = await translateTargets(input);
+      return send(response, Object.keys(result.errors).length ? 207 : 200, { ok: true, data: { ...result, source: input.source, targets: input.targets } });
+    }
     const input = validateTranslationInput(request.body);
     const translation = await translateText(input);
     return send(response, 200, { ok: true, data: { translation, source: input.source, target: input.target } });

@@ -24,3 +24,11 @@ test('limits requests per policy and client until the window resets', () => {
   assert.equal(limited.retryAfter, 1);
   assert.equal(checkRateLimit('test', request, { limit: 2, windowMs: 1000 }, 1100).allowed, true);
 });
+
+test('charges batch request cost against the same rate budget', () => {
+  const request = { headers: { 'x-forwarded-for': '203.0.113.9' } };
+  assert.equal(checkRateLimit('batch', request, { limit: 3, windowMs: 1000, cost: 2 }, 0).remaining, 1);
+  const limited = checkRateLimit('batch', request, { limit: 3, windowMs: 1000, cost: 2 }, 1);
+  assert.equal(limited.allowed, false);
+  assert.equal(limited.remaining, 0);
+});
