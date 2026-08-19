@@ -12,6 +12,12 @@ export function deriveControlState(text = '') {
   return { canCopy: text.trim().length > 0, canListen: text.trim().length > 0 };
 }
 
+export function getPlaybackControlState(status = 'idle') {
+  if (status === 'playing') return { icon: '❚❚', label: 'Pause', pressed: true };
+  if (status === 'paused') return { icon: '▶', label: 'Resume', pressed: true };
+  return { icon: '▶', label: 'Listen', pressed: false };
+}
+
 export function createRequestGate() {
   let current = 0;
   return {

@@ -1,4 +1,4 @@
-import { LANGUAGES, createBoundedCache, createRequestGate, deriveControlState, getRadioNavigationTarget, getTargetLanguages } from './lib.js';
+import { LANGUAGES, createBoundedCache, createRequestGate, deriveControlState, getPlaybackControlState, getRadioNavigationTarget, getTargetLanguages } from './lib.js';
 import { MAX_RECORDING_SECONDS, SILENCE_SECONDS, SILENCE_THRESHOLD, blobToBase64, calculateRms, downsampleAudio, encodeWav } from './audio.js';
 
 const input = document.querySelector('#source-text');
@@ -21,6 +21,7 @@ let debounceTimer;
 let controller;
 let deferredInstallPrompt;
 let toastTimer;
+let activeSpeech;
 const requestGate = createRequestGate();
 const translationCache = createBoundedCache(50);
 const resultState = new Map();
@@ -53,7 +54,7 @@ function resultCard(code) {
     <div class="result-language"><h3 id="result-${code}-title" lang="${code}" dir="${language.dir}">${language.nativeLabel}</h3><span>${language.label}</span></div>
     ${content}
     <div class="result-actions">
-      <button class="icon-button" type="button" data-action="listen" data-code="${code}" ${controls.canListen ? '' : 'disabled'}><span aria-hidden="true">▶</span><span>Listen</span><span class="sr-only"> to ${language.label} translation</span></button>
+      <button class="icon-button" type="button" data-action="listen" data-code="${code}" aria-pressed="false" ${controls.canListen ? '' : 'disabled'}><span aria-hidden="true">▶</span><span>Listen</span><span class="sr-only"> to ${language.label} translation</span></button>
       <button class="icon-button" type="button" data-action="copy" data-code="${code}" ${controls.canCopy ? '' : 'disabled'}><span aria-hidden="true">⧉</span><span>Copy</span><span class="sr-only"> ${language.label} translation</span></button>
     </div>
   </article>`;
@@ -288,6 +289,7 @@ function queueTranslation() {
 
 function setLanguage(code, { focusInput = true } = {}) {
   if (!LANGUAGES[code] || code === sourceLanguage) return;
+  stopSpeech();
   cancelPending();
   sourceLanguage = code;
   const language = LANGUAGES[code];
@@ -306,9 +308,37 @@ function setLanguage(code, { focusInput = true } = {}) {
   recordingHelp.textContent = `Record one phrase in ${language.label}. Press Space or Enter to start or stop recording. Recording stops after 30 seconds or a short silence.`;
 }
 
-function speak(text, code) {
+function setPlaybackButton(button, status) {
+  if (!button) return;
+  const state = getPlaybackControlState(status);
+  button.firstElementChild.textContent = state.icon;
+  button.children[1].textContent = state.label;
+  button.setAttribute('aria-pressed', String(state.pressed));
+}
+
+function stopSpeech() {
+  if (!activeSpeech) return;
+  const speech = activeSpeech;
+  activeSpeech = undefined;
+  setPlaybackButton(speech.button, 'idle');
+  window.speechSynthesis?.cancel();
+}
+
+function speak(text, code, button) {
   if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
     showToast('Speech playback is unavailable in this browser.');
+    return;
+  }
+  if (activeSpeech?.button === button) {
+    if (activeSpeech.status === 'paused') {
+      window.speechSynthesis.resume();
+      activeSpeech.status = 'playing';
+      setPlaybackButton(button, 'playing');
+    } else {
+      window.speechSynthesis.pause();
+      activeSpeech.status = 'paused';
+      setPlaybackButton(button, 'paused');
+    }
     return;
   }
   const language = LANGUAGES[code];
@@ -318,11 +348,23 @@ function speak(text, code) {
     showToast(`No ${language.label} system voice is installed on this device.`);
     return;
   }
-  window.speechSynthesis.cancel();
+  stopSpeech();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = language.locale;
   if (voice) utterance.voice = voice;
-  utterance.onerror = () => showToast('Speech playback could not be completed.');
+  activeSpeech = { button, utterance, status: 'playing' };
+  setPlaybackButton(button, 'playing');
+  utterance.onend = () => {
+    if (activeSpeech?.utterance !== utterance) return;
+    setPlaybackButton(button, 'idle');
+    activeSpeech = undefined;
+  };
+  utterance.onerror = () => {
+    if (activeSpeech?.utterance !== utterance) return;
+    setPlaybackButton(button, 'idle');
+    activeSpeech = undefined;
+    showToast('Speech playback could not be completed.');
+  };
   window.speechSynthesis.speak(utterance);
 }
 
@@ -362,15 +404,15 @@ document.querySelector('.language-tabs').addEventListener('keydown', (event) => 
   setLanguage(target, { focusInput: false });
   languageButtons.find((button) => button.dataset.language === target)?.focus();
 });
-input.addEventListener('input', queueTranslation);
-clearButton.addEventListener('click', () => { input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared.'; input.focus(); });
-sourceListen.addEventListener('click', () => speak(input.value, sourceLanguage));
+input.addEventListener('input', () => { stopSpeech(); queueTranslation(); });
+clearButton.addEventListener('click', () => { stopSpeech(); input.value = ''; cancelPending(); updateSourceControls(); resetResults(); globalStatus.textContent = 'Text cleared.'; input.focus(); });
+sourceListen.addEventListener('click', () => speak(input.value, sourceLanguage, sourceListen));
 results.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');
   if (!button || button.disabled) return;
   const code = button.dataset.code;
   if (button.dataset.action === 'copy') copyResult(code);
-  else speak(resultState.get(code)?.text ?? '', code);
+  else speak(resultState.get(code)?.text ?? '', code, button);
 });
 window.addEventListener('online', updateNetworkStatus);
 window.addEventListener('offline', updateNetworkStatus);

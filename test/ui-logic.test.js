@@ -1,11 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LANGUAGES, createBoundedCache, createRequestGate, deriveControlState, getRadioNavigationTarget, getTargetLanguages } from '../public/lib.js';
+import { LANGUAGES, createBoundedCache, createRequestGate, deriveControlState, getPlaybackControlState, getRadioNavigationTarget, getTargetLanguages } from '../public/lib.js';
 
 test('copy and listen buttons enable only for usable text', () => {
   assert.deepEqual(deriveControlState(''), { canCopy: false, canListen: false });
   assert.deepEqual(deriveControlState('  '), { canCopy: false, canListen: false });
   assert.deepEqual(deriveControlState('שלום'), { canCopy: true, canListen: true });
+});
+
+test('listen control exposes deterministic play, pause, and resume states', () => {
+  assert.deepEqual(getPlaybackControlState('idle'), { icon: '▶', label: 'Listen', pressed: false });
+  assert.deepEqual(getPlaybackControlState('playing'), { icon: '❚❚', label: 'Pause', pressed: true });
+  assert.deepEqual(getPlaybackControlState('paused'), { icon: '▶', label: 'Resume', pressed: true });
 });
 test('Hebrew output is right-to-left', () => assert.equal(LANGUAGES.he.dir, 'rtl'));
 test('language switching produces the correct panels', () => assert.deepEqual(getTargetLanguages('es'), ['he', 'en']));
