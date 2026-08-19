@@ -20,7 +20,7 @@ Lingua Live targets WCAG 2.2 Level AA with keyboard operation, visible focus, sc
 - Translates after a 500 ms pause without sending empty requests
 - Cancels obsolete requests and prevents stale results
 - Enforces a 500-character text limit
-- Records one phrase for up to 30 seconds
+- Records one phrase for up to 45 seconds
 - Stops recording after approximately 1.75 seconds of silence
 - Enforces a 3 MB audio limit in both browser and API
 - Allows only one selected recording language and one active recording
@@ -53,7 +53,7 @@ Lingua Live targets WCAG 2.2 Level AA with keyboard operation, visible focus, sc
 1. Select the language you intend to speak.
 2. Select **Record** and allow microphone access when prompted.
 3. Speak one short phrase clearly.
-4. Select **Stop**, remain quiet for approximately 1.75 seconds, or wait for the 30-second limit.
+4. Select **Stop**, remain quiet for approximately 1.75 seconds, or wait for the 45-second limit.
 5. Review the transcript in the source field. Lingua Live then translates it into both remaining languages.
 
 Record one speaker at a time. Speech transcription requires an internet connection and configured Azure credentials.
@@ -128,6 +128,7 @@ Actual usage can be lower because new text after a pause can initiate another pa
 
 The Azure F0 tier currently provides approximately five audio hours of speech-to-text per month with one concurrent request. That is theoretically:
 
+- 400 recordings at 45 seconds each
 - 600 recordings at 30 seconds each
 - 1,200 recordings at 15 seconds each
 
@@ -235,7 +236,7 @@ npm run check
 After a production deployment, verify:
 
 - All three source languages produce both expected translations.
-- All three microphone languages transcribe and the manual, silence, and 30-second stops work.
+- All three microphone languages transcribe and the manual, silence, and 45-second stops work.
 - Copy and Listen controls work on at least one phone or iPad and one desktop browser.
 - Keyboard focus, Hebrew RTL, PWA installation, and offline shell loading remain usable.
 - Translation and transcription requests are not present in Cache Storage.

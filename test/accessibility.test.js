@@ -49,7 +49,7 @@ test('record button has stable keyboard and recording instructions', async () =>
   const help = html.match(/<p id="recording-help"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '';
   assert.match(button, /aria-describedby="recording-help"/);
   assert.match(help, /Press Space or Enter to start or stop recording/);
-  assert.match(help, /30 seconds or a short silence/);
+  assert.match(help, /45 seconds or a short silence/);
 });
 
 test('visible button labels are included directly in accessible names', async () => {

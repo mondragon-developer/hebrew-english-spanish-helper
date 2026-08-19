@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateRms, downsampleAudio, encodeWav } from '../public/audio.js';
+import { MAX_RECORDING_SECONDS, calculateRms, downsampleAudio, encodeWav } from '../public/audio.js';
+
+test('browser recording limit is 45 seconds', () => {
+  assert.equal(MAX_RECORDING_SECONDS, 45);
+});
 
 test('silence detection uses RMS audio energy', () => {
   assert.equal(calculateRms(new Float32Array(10)), 0);
