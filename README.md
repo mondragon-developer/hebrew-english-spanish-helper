@@ -93,7 +93,7 @@ New translations and speech transcription still require internet access. The ser
 
 ```text
 Browser / installed PWA
-  ├─ typed text ────────→ /api/translate ──→ MyMemory
+  ├─ typed text ────────→ batch /api/translate ──→ MyMemory
   ├─ 16 kHz mono WAV ───→ /api/transcribe ─→ Azure AI Speech
   └─ Listen controls ───→ installed system voices
 ```
@@ -107,6 +107,8 @@ Provider-specific logic is isolated in server-side adapters:
 
 This keeps credentials out of browser code and allows either provider to be replaced without redesigning the interface.
 
+Successful translations use two bounded, temporary memory caches: up to 50 translations in the current browser tab and up to 200 hashed-key translations in each warm serverless instance for approximately 10 minutes. Identical provider requests already in flight are deduplicated. Caches are not written to disk, browser storage, logs, or the service worker, and failures are never cached.
+
 ## Usage limits
 
 ### MyMemory translation
@@ -118,7 +120,7 @@ MyMemory measures free usage by submitted characters:
 
 Lingua Live requests two translations for each source entry, so a 100-character source phrase consumes roughly 200 submitted characters. At that average size, the theoretical capacity is approximately 25 translation actions per day without an email or 250 per day with an email.
 
-Actual usage can be lower because every pause during typing can initiate another pair of translations. Quotas may also be shared by traffic leaving the same server infrastructure. Public API limits and policies can change; consult the provider documentation before relying on these estimates.
+Actual usage can be lower because new text after a pause can initiate another pair of translations. Session caching, short-lived server caching, and in-flight deduplication avoid some identical repeat requests. Quotas may also be shared by traffic leaving the same server infrastructure. Public API limits and policies can change; consult the provider documentation before relying on these estimates.
 
 ### Azure AI Speech F0
 
@@ -133,7 +135,7 @@ Unused allowance does not guarantee availability, accuracy, or future pricing. W
 
 - Translation text is sent to the same-origin API and then to MyMemory.
 - Recorded audio is sent to the same-origin API and then to Azure AI Speech.
-- Lingua Live does not intentionally store or log translation text, transcripts, or recorded audio.
+- Lingua Live does not persist or log translation text, transcripts, or recorded audio. Successful translations can remain temporarily in bounded browser-tab and warm-function memory caches; server cache keys contain a SHA-256 hash rather than source text.
 - Translation and transcription responses use `Cache-Control: no-store`.
 - The service worker excludes every `/api/` request.
 - Azure credentials are read only on the server.

@@ -1,5 +1,10 @@
+import { createHash } from 'node:crypto';
+import { createExpiringCache } from './cache.js';
+
 const PROVIDER_URL = 'https://api.mymemory.translated.net/get';
 const DEFAULT_TIMEOUT_MS = 8000;
+const translationCache = createExpiringCache();
+const inFlightTranslations = new Map();
 
 export class ProviderError extends Error {
   constructor(message, status = 502, code = 'PROVIDER_ERROR') {
@@ -56,5 +61,40 @@ export async function translateWithMyMemory({ text, source, target }, options = 
 export async function translateText(input, options = {}) {
   const provider = options.provider ?? process.env.TRANSLATION_PROVIDER ?? 'mymemory';
   if (provider !== 'mymemory') throw new ProviderError('The configured translation provider is unavailable.', 500, 'PROVIDER_CONFIG');
-  return translateWithMyMemory(input, options);
+  if (options.cache === false) return translateWithMyMemory(input, options);
+
+  const textHash = createHash('sha256').update(input.text).digest('hex');
+  const key = `${provider}:${input.source}:${input.target}:${textHash}`;
+  const cached = translationCache.get(key);
+  if (cached !== undefined) return cached;
+  if (inFlightTranslations.has(key)) return inFlightTranslations.get(key);
+
+  const request = translateWithMyMemory(input, options)
+    .then((translation) => {
+      translationCache.set(key, translation);
+      return translation;
+    })
+    .finally(() => inFlightTranslations.delete(key));
+  inFlightTranslations.set(key, request);
+  return request;
+}
+
+export async function translateTargets({ text, source, targets }, options = {}) {
+  const outcomes = await Promise.allSettled(targets.map((target) => translateText({ text, source, target }, options)));
+  const translations = {};
+  const errors = {};
+  outcomes.forEach((outcome, index) => {
+    const target = targets[index];
+    if (outcome.status === 'fulfilled') translations[target] = outcome.value;
+    else {
+      const error = outcome.reason instanceof ProviderError ? outcome.reason : new ProviderError('Translation could not be completed.');
+      errors[target] = { code: error.code, message: error.message };
+    }
+  });
+  return { translations, errors };
+}
+
+export function resetTranslationStateForTests() {
+  translationCache.clear();
+  inFlightTranslations.clear();
 }

@@ -18,7 +18,7 @@ export function getClientId(request) {
   return String(address).slice(0, 128);
 }
 
-export function checkRateLimit(policy, request, { limit, windowMs }, now = Date.now()) {
+export function checkRateLimit(policy, request, { limit, windowMs, cost = 1 }, now = Date.now()) {
   let clients = stores.get(policy);
   if (!clients) {
     clients = new Map();
@@ -38,7 +38,7 @@ export function checkRateLimit(policy, request, { limit, windowMs }, now = Date.
     entry = { count: 0, resetAt: now + windowMs };
     clients.set(client, entry);
   }
-  entry.count += 1;
+  entry.count += Math.max(1, cost);
 
   return {
     allowed: entry.count <= limit,
