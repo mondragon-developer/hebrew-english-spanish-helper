@@ -91,6 +91,8 @@ New translations and speech transcription still require internet access. The ser
 
 ## Architecture
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the complete architecture rationale, component boundaries, request flows, deployment model, caching and privacy design, accessibility architecture, diagrams, and scaling considerations.
+
 ```text
 Browser / installed PWA
   ├─ typed text ────────→ batch /api/translate ──→ MyMemory
