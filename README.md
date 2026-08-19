@@ -1,5 +1,9 @@
 # Lingua Live
 
+[**Open Lingua Live →**](https://lingua-live-hespen.vercel.app/)
+
+[![Lingua Live translating Spanish into Hebrew and English](docs/lingua-live.png)](https://lingua-live-hespen.vercel.app/)
+
 Lingua Live is a fast, accessible translator for Hebrew, English, and Spanish. Select a source language, type or record a short phrase, and receive translations in both remaining languages.
 
 The application is designed for phones, iPads, tablets, desktop browsers, and installation as a Progressive Web App (PWA).
