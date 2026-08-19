@@ -53,11 +53,12 @@
         <div class="recorder" aria-labelledby="recorder-title">
           <div>
             <strong id="recorder-title">Speak instead</strong>
+            <p id="recording-help" class="sr-only">Record one phrase in English. Press Space or Enter to start or stop recording. Recording stops after 30 seconds or a short silence.</p>
             <p id="recording-status" role="status" aria-live="polite" aria-atomic="true">Record one phrase in the selected language. Stops after 30 seconds or a short silence.</p>
           </div>
           <div class="recording-actions">
             <span id="recording-timer" class="recording-timer" role="timer" aria-label="Recording time: 0 seconds of 30">0:00 / 0:30</span>
-            <button id="record-button" class="button record-button" type="button" aria-pressed="false"><span aria-hidden="true">●</span><span>Record</span></button>
+            <button id="record-button" class="button record-button" type="button" aria-pressed="false" aria-describedby="recording-help"><span aria-hidden="true">●</span><span>Record</span></button>
           </div>
         </div>
         <div class="panel-footer">
