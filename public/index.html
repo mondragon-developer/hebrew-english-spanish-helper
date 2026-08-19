@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#b4533c">
+  <meta name="description" content="Translate Hebrew, English, and Spanish into both other languages as you type.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Lingua Live">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Lingua Live — Hebrew, English & Spanish Translator</title>
+</head>
+<body>
+  <a class="skip-link" href="#source-text">Skip to translator</a>
+  <header class="site-header">
+    <div class="brand"><img src="/icons/icon.svg" alt="" width="44" height="44"><span>Lingua Live</span></div>
+    <div class="header-actions">
+      <span id="network-status" class="network-status" role="status"><span class="status-dot"></span><span>Online</span></span>
+      <button id="install-button" class="button secondary" type="button" hidden>Install app</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">Three languages. One thought.</p>
+      <h1 id="page-title">Say it in every language.</h1>
+      <p>Type in Hebrew, English, or Spanish and see both other translations as you write.</p>
+    </section>
+
+    <section class="translator" aria-label="Live translator">
+      <article class="panel source-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="panel-kicker">Translate from</p>
+            <div class="language-tabs" role="radiogroup" aria-label="Source language">
+              <button type="button" role="radio" aria-checked="false" data-language="he"><span lang="he" dir="rtl">עברית</span><small>Hebrew</small></button>
+              <button type="button" role="radio" aria-checked="true" data-language="en"><span>English</span><small>English</small></button>
+              <button type="button" role="radio" aria-checked="false" data-language="es"><span lang="es">Español</span><small>Spanish</small></button>
+            </div>
+          </div>
+          <button id="clear-button" class="icon-button" type="button" disabled aria-label="Clear source text" title="Clear text">
+            <span aria-hidden="true">×</span><span>Clear</span>
+          </button>
+        </div>
+        <label class="sr-only" for="source-text">Text to translate</label>
+        <textarea id="source-text" maxlength="500" rows="7" lang="en" dir="ltr" placeholder="Start typing in English…" aria-describedby="source-help character-count"></textarea>
+        <div class="panel-footer">
+          <p id="source-help">Translations appear after a short pause.</p>
+          <div class="footer-actions">
+            <button id="source-listen" class="icon-button" type="button" disabled aria-label="Listen to source text"><span aria-hidden="true">▶</span><span>Listen</span></button>
+            <span id="character-count" class="counter">0 / 500</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="results-heading">
+        <div><p class="panel-kicker">Translations</p><h2>Both at once</h2></div>
+        <p id="global-status" class="global-status" role="status" aria-live="polite">Enter text to begin.</p>
+      </div>
+      <div id="results" class="results-grid"></div>
+    </section>
+    <p class="privacy-note">Translations are machine-generated and may not be exact. Text is sent only when you request a translation and is not stored by Lingua Live.</p>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
