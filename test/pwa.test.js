@@ -14,4 +14,5 @@ test('service worker explicitly excludes translation API requests', async () => 
   const worker = await readFile('public/sw.js', 'utf8');
   assert.match(worker, /pathname\.startsWith\('\/api\/'\)/);
   assert.doesNotMatch(worker.match(/APP_SHELL\s*=\s*\[[^\]]+\]/s)?.[0] ?? '', /\/api\//);
+  assert.match(worker, /\/audio\.js/);
 });

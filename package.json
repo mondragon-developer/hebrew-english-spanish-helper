@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "npm run build --silent && node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "preview": "node scripts/serve.mjs",
     "test": "node --test",
     "lint": "node scripts/lint.mjs",
-    "typecheck": "node --check public/app.js && node --check api/translate.js && node --check api/_lib/provider.js",
+    "typecheck": "node --check public/app.js && node --check public/audio.js && node --check api/translate.js && node --check api/transcribe.js && node --check api/_lib/provider.js && node --check api/_lib/speech-provider.js",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "engines": {
