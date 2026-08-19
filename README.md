@@ -190,17 +190,13 @@ Available scripts:
 | `npm run typecheck` | Run JavaScript syntax checks |
 | `npm run check` | Run lint, syntax checks, tests, and build |
 
-## Deploying to Vercel
+## Vercel configuration and maintenance
 
-1. Import `mondragon-developer/hebrew-english-spanish-helper` into Vercel.
-2. Select `main` as the Production Branch.
-3. Keep the build command as `npm run build` and output directory as `dist`.
-4. In **Project → Settings → Environment Variables**, add `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` for Development, Preview, and Production.
-5. Optionally add `MYMEMORY_EMAIL` and `TRANSLATION_PROVIDER=mymemory`.
-6. Redeploy after adding or changing environment variables.
-7. Verify the assigned HTTPS production URL.
+The repository is already configured for Vercel with `npm run build`, the `dist/` output directory, and same-origin API routes.
 
-Do not hard-code localhost or deployment-specific Vercel URLs. Both APIs are intentionally same-origin.
+For a new Vercel project, connect this repository and use `main` as the Production Branch. Under **Project → Settings → Environment Variables**, configure `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` for every environment that needs microphone transcription. `MYMEMORY_EMAIL` and `TRANSLATION_PROVIDER=mymemory` remain optional.
+
+Redeploy whenever environment variables change, then verify the HTTPS deployment. Do not hard-code localhost or deployment-specific Vercel URLs.
 
 ## Testing
 
@@ -222,22 +218,15 @@ Run the complete pipeline:
 npm run check
 ```
 
-### Post-deployment checklist
+### Release smoke test
 
-- [ ] Hebrew → English and Spanish
-- [ ] English → Hebrew and Spanish
-- [ ] Spanish → Hebrew and English
-- [ ] Hebrew, English, and Spanish microphone transcription
-- [ ] Manual stop, silence stop, and 30-second stop
-- [ ] Copy confirmation and Listen controls
-- [ ] Missing voice and denied microphone messages
-- [ ] Phone portrait and landscape layout
-- [ ] iPad portrait and landscape layout
-- [ ] Desktop layout
-- [ ] Keyboard navigation and visible focus states
-- [ ] PWA installation
-- [ ] Offline application-shell behavior
-- [ ] No translation or transcription requests in Cache Storage
+After a production deployment, verify:
+
+- All three source languages produce both expected translations.
+- All three microphone languages transcribe and the manual, silence, and 30-second stops work.
+- Copy and Listen controls work on at least one phone or iPad and one desktop browser.
+- Keyboard focus, Hebrew RTL, PWA installation, and offline shell loading remain usable.
+- Translation and transcription requests are not present in Cache Storage.
 
 ## Troubleshooting
 
@@ -280,6 +269,18 @@ This is expected. Only the application shell is available offline. Translation a
 - Automatic language detection is intentionally not used; the speaker selects one language per turn.
 - Overlapping speakers and noisy environments reduce transcription quality.
 
+## Possible improvements
+
+- Replace device-dependent Listen playback with Azure Neural Text-to-Speech for more consistent, natural voices across iPads, phones, and desktops.
+- Add user-selectable voice, speaking-rate, and playback controls while keeping accessible defaults.
+- Move from the public MyMemory allowance to a translation provider or paid plan with higher quotas, authenticated usage, monitoring, and service commitments.
+- Reduce unnecessary translation usage with smarter debounce, explicit submit mode, or client-side request deduplication.
+- Add browser automation, accessibility auditing, and screenshot regression tests for representative phone, iPad, and desktop viewports.
+- Add privacy-conscious, opt-in on-device history and reusable favorite phrases.
+- Add a two-person conversation view with clear alternating language controls.
+
 ## License
 
-No license has been added yet. Unless a license file is introduced, normal copyright restrictions apply.
+Lingua Live is available under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You may use, modify, and distribute the software for permitted noncommercial purposes under that license. Commercial use is not granted and requires separate permission from the copyright holder.
+
+This is a source-available noncommercial license, not an OSI-approved open-source license.
