@@ -16,9 +16,12 @@ function contrast(first, second) {
 test('core text and control colors meet WCAG AA contrast thresholds', () => {
   assert.ok(contrast('#2f2926', '#ffffff') >= 4.5, 'primary text');
   assert.ok(contrast('#746762', '#ffffff') >= 4.5, 'muted and placeholder text');
+  assert.ok(contrast('#746762', '#fffaf4') >= 4.5, 'muted text on page background');
   assert.ok(contrast('#ffffff', '#b4533c') >= 4.5, 'selected language text');
+  assert.ok(contrast('#843927', '#fffaf4') >= 4.5, 'accent text and links');
   assert.ok(contrast('#9a8177', '#ffffff') >= 3, 'control boundaries');
   assert.ok(contrast('#3876b5', '#ffffff') >= 3, 'focus indicator');
+  assert.ok(contrast('#3876b5', '#fffaf4') >= 3, 'focus indicator on page background');
 });
 
 test('language radio group exposes one tab stop and instructions', async () => {
@@ -65,4 +68,32 @@ test('ARIA labels are used only with supported recorder and counter semantics', 
   const counter = html.match(/<span id="character-count"[^>]*>/)?.[0] ?? '';
   assert.doesNotMatch(counter, /aria-label/);
   assert.match(html, /id="character-count" class="counter">0 of 500 characters/);
+});
+
+test('translation destinations are labelled keyboard stops with described content', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  const app = await readFile('public/app.js', 'utf8');
+  assert.match(html, /<h2 id="translations-title">Both at once<\/h2>/);
+  assert.match(html, /id="results"[^>]*aria-labelledby="translations-title"/);
+  assert.match(app, /data-result="\$\{code\}" tabindex="0"/);
+  assert.match(app, /aria-labelledby="result-\$\{code\}-title" aria-describedby="result-\$\{code\}-content"/);
+  assert.match(app, /id="result-\$\{code\}-content" class="result-text/);
+});
+
+test('interactive control targets exceed the WCAG 2.2 AA 24px minimum', async () => {
+  const css = await readFile('public/styles.css', 'utf8');
+  const controls = css.match(/\.button, \.icon-button \{[^}]+\}/)?.[0] ?? '';
+  const languages = css.match(/\.language-tabs button \{[^}]+\}/)?.[0] ?? '';
+  const value = (rule, property) => Number(rule.match(new RegExp(`${property}: (\\d+)px`))?.[1] ?? 0);
+  assert.ok(value(controls, 'min-height') >= 24);
+  assert.ok(value(controls, 'min-width') >= 24);
+  assert.ok(value(languages, 'min-height') >= 24);
+  assert.ok(value(languages, 'min-width') >= 24);
+});
+
+test('focus indicator is at least 2px thick and included on translation panels', async () => {
+  const css = await readFile('public/styles.css', 'utf8');
+  const focusRule = css.match(/button:focus-visible[^}]+\}/)?.[0] ?? '';
+  assert.match(focusRule, /\.result-panel:focus-visible/);
+  assert.ok(Number(focusRule.match(/outline: (\d+)px/)?.[1] ?? 0) >= 2);
 });

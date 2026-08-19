@@ -46,9 +46,9 @@ function resultCard(code) {
   const state = resultState.get(code) ?? { status: 'empty', text: '', message: 'Your translation will appear here.' };
   const controls = deriveControlState(state.text);
   const content = state.status === 'loading'
-    ? '<div class="skeleton" aria-label="Translating"><span></span><span></span><span></span></div>'
-    : `<p class="result-text ${state.text ? '' : 'placeholder'}" ${state.status === 'error' ? 'role="status"' : ''} lang="${code}" dir="${language.dir}">${escapeText(state.text || state.message)}</p>`;
-  return `<article class="panel result-panel" data-result="${code}" aria-busy="${state.status === 'loading'}" aria-labelledby="result-${code}-title">
+    ? `<div id="result-${code}-content" class="skeleton" aria-label="Translating"><span></span><span></span><span></span></div>`
+    : `<p id="result-${code}-content" class="result-text ${state.text ? '' : 'placeholder'}" ${state.status === 'error' ? 'role="status"' : ''} lang="${code}" dir="${language.dir}">${escapeText(state.text || state.message)}</p>`;
+  return `<article class="panel result-panel" data-result="${code}" tabindex="0" aria-busy="${state.status === 'loading'}" aria-labelledby="result-${code}-title" aria-describedby="result-${code}-content">
     <div class="result-language"><h3 id="result-${code}-title" lang="${code}" dir="${language.dir}">${language.nativeLabel}</h3><span>${language.label}</span></div>
     ${content}
     <div class="result-actions">
