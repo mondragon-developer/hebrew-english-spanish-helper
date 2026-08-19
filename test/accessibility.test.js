@@ -62,6 +62,17 @@ test('visible button labels are included directly in accessible names', async ()
   assert.match(app, /<span>Copy<\/span><span class="sr-only"> \$\{language\.label\} translation<\/span>/);
 });
 
+test('listen controls expose their toggle state and preserve descriptive text', async () => {
+  const html = await readFile('public/index.html', 'utf8');
+  const app = await readFile('public/app.js', 'utf8');
+  assert.match(html, /id="source-listen"[^>]*aria-pressed="false"/);
+  assert.match(app, /data-action="listen"[^>]*aria-pressed="false"/);
+  assert.match(app, /speechSynthesis\.pause\(\)/);
+  assert.match(app, /speechSynthesis\.resume\(\)/);
+  assert.match(app, /setPlaybackButton\(button, 'playing'\)/);
+  assert.match(app, /setPlaybackButton\(button, 'paused'\)/);
+});
+
 test('ARIA labels are used only with supported recorder and counter semantics', async () => {
   const html = await readFile('public/index.html', 'utf8');
   assert.match(html, /class="recorder" role="group" aria-labelledby="recorder-title"/);
