@@ -37,8 +37,7 @@ function updateSourceControls() {
   clearButton.disabled = !state.canCopy;
   sourceListen.disabled = !state.canListen;
   const count = [...input.value].length;
-  counter.textContent = `${count} / 500`;
-  counter.setAttribute('aria-label', `${count} of 500 characters`);
+  counter.textContent = `${count} of 500 characters`;
   counter.classList.toggle('near-limit', count >= 450);
 }
 
@@ -53,8 +52,8 @@ function resultCard(code) {
     <div class="result-language"><h3 id="result-${code}-title" lang="${code}" dir="${language.dir}">${language.nativeLabel}</h3><span>${language.label}</span></div>
     ${content}
     <div class="result-actions">
-      <button class="icon-button" type="button" data-action="listen" data-code="${code}" ${controls.canListen ? '' : 'disabled'} aria-label="Listen to ${language.label} translation"><span aria-hidden="true">▶</span><span>Listen</span></button>
-      <button class="icon-button" type="button" data-action="copy" data-code="${code}" ${controls.canCopy ? '' : 'disabled'} aria-label="Copy ${language.label} translation"><span aria-hidden="true">⧉</span><span>Copy</span></button>
+      <button class="icon-button" type="button" data-action="listen" data-code="${code}" ${controls.canListen ? '' : 'disabled'}><span aria-hidden="true">▶</span><span>Listen</span><span class="sr-only"> to ${language.label} translation</span></button>
+      <button class="icon-button" type="button" data-action="copy" data-code="${code}" ${controls.canCopy ? '' : 'disabled'}><span aria-hidden="true">⧉</span><span>Copy</span><span class="sr-only"> ${language.label} translation</span></button>
     </div>
   </article>`;
 }
