@@ -1,4 +1,5 @@
 import { LANGUAGES, createRequestGate, deriveControlState, getTargetLanguages } from './lib.js';
+import { MAX_RECORDING_SECONDS, SILENCE_SECONDS, SILENCE_THRESHOLD, blobToBase64, calculateRms, downsampleAudio, encodeWav } from './audio.js';
 
 const input = document.querySelector('#source-text');
 const clearButton = document.querySelector('#clear-button');
@@ -9,6 +10,9 @@ const globalStatus = document.querySelector('#global-status');
 const networkStatus = document.querySelector('#network-status');
 const toast = document.querySelector('#toast');
 const installButton = document.querySelector('#install-button');
+const recordButton = document.querySelector('#record-button');
+const recordingStatus = document.querySelector('#recording-status');
+const recordingTimer = document.querySelector('#recording-timer');
 const languageButtons = [...document.querySelectorAll('[data-language]')];
 
 let sourceLanguage = 'en';
@@ -18,6 +22,7 @@ let deferredInstallPrompt;
 let toastTimer;
 const requestGate = createRequestGate();
 const resultState = new Map();
+let recording;
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -71,6 +76,113 @@ function cancelPending() {
   controller?.abort();
   controller = undefined;
   requestGate.invalidate();
+}
+
+function setRecorderMessage(message) {
+  recordingStatus.textContent = message;
+}
+
+function setRecordingUi(active, busy = false) {
+  recordButton.disabled = busy || !navigator.onLine;
+  recordButton.classList.toggle('recording', active);
+  recordButton.setAttribute('aria-pressed', String(active));
+  recordButton.lastElementChild.textContent = active ? 'Stop' : busy ? 'Transcribing…' : 'Record';
+  languageButtons.forEach((button) => { button.disabled = active || busy; });
+}
+
+async function stopRecording(reason = 'manual') {
+  if (!recording || recording.stopping) return;
+  recording.stopping = true;
+  const state = recording;
+  recording = undefined;
+  clearInterval(state.timer);
+  state.processor.disconnect();
+  state.source.disconnect();
+  state.stream.getTracks().forEach((track) => track.stop());
+  await state.context.close();
+  setRecordingUi(false, true);
+  if (reason === 'offline') {
+    setRecordingUi(false);
+    recordingTimer.textContent = '0:00 / 0:30';
+    setRecorderMessage('Connection lost. The recording was discarded because transcription requires internet.');
+    return;
+  }
+  if (!state.voiceDetected || state.chunks.length === 0) {
+    setRecordingUi(false);
+    recordingTimer.textContent = '0:00 / 0:30';
+    setRecorderMessage('No speech was detected. Move closer to the microphone and try again.');
+    return;
+  }
+  setRecorderMessage(reason === 'silence' ? 'Silence detected. Transcribing…' : reason === 'limit' ? '30-second limit reached. Transcribing…' : 'Transcribing your recording…');
+  try {
+    const samples = downsampleAudio(state.chunks, state.context.sampleRate);
+    const wav = encodeWav(samples);
+    if (wav.size > 3 * 1024 * 1024) throw new Error('The recording exceeds the 3 MB limit.');
+    const response = await fetch('/api/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio: await blobToBase64(wav), mimeType: 'audio/wav', language: sourceLanguage })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message || 'The recording could not be transcribed.');
+    input.value = [...payload.data.transcript].slice(0, 500).join('');
+    updateSourceControls();
+    setRecorderMessage('Transcript ready. Translating into both languages…');
+    queueTranslation();
+  } catch (error) {
+    setRecorderMessage(error.message || 'Speech transcription failed. Please try again.');
+  } finally {
+    setRecordingUi(false);
+    recordingTimer.textContent = '0:00 / 0:30';
+  }
+}
+
+async function startRecording() {
+  if (recording) return stopRecording();
+  if (!navigator.onLine) {
+    setRecorderMessage('You’re offline. Speech transcription requires an internet connection.');
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || !window.AudioContext) {
+    setRecorderMessage('Microphone recording is unavailable in this browser.');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }, video: false });
+    const context = new window.AudioContext();
+    await context.resume();
+    const source = context.createMediaStreamSource(stream);
+    const processor = context.createScriptProcessor(4096, 1, 1);
+    const silentGain = context.createGain();
+    silentGain.gain.value = 0;
+    const state = { context, stream, source, processor, chunks: [], startedAt: performance.now(), lastVoiceAt: 0, voiceDetected: false, stopping: false };
+    recording = state;
+    processor.onaudioprocess = (event) => {
+      if (!recording || recording !== state) return;
+      const chunk = new Float32Array(event.inputBuffer.getChannelData(0));
+      state.chunks.push(chunk);
+      const elapsed = (performance.now() - state.startedAt) / 1000;
+      if (calculateRms(chunk) >= SILENCE_THRESHOLD) {
+        state.voiceDetected = true;
+        state.lastVoiceAt = elapsed;
+      } else if (state.voiceDetected && elapsed - state.lastVoiceAt >= SILENCE_SECONDS) {
+        stopRecording('silence');
+      }
+    };
+    source.connect(processor);
+    processor.connect(silentGain);
+    silentGain.connect(context.destination);
+    state.timer = setInterval(() => {
+      const elapsed = Math.min(MAX_RECORDING_SECONDS, (performance.now() - state.startedAt) / 1000);
+      recordingTimer.textContent = `0:${String(Math.floor(elapsed)).padStart(2, '0')} / 0:30`;
+      if (elapsed >= MAX_RECORDING_SECONDS) stopRecording('limit');
+    }, 200);
+    setRecordingUi(true);
+    setRecorderMessage(`Listening in ${LANGUAGES[sourceLanguage].label}. Speak clearly; recording stops after a short silence.`);
+  } catch (error) {
+    setRecordingUi(false);
+    setRecorderMessage(error?.name === 'NotAllowedError' ? 'Microphone access was denied. Allow it in browser settings and try again.' : 'The microphone could not be started. Check browser and device settings.');
+  }
 }
 
 async function requestTranslation(text, target, signal) {
@@ -152,6 +264,7 @@ function setLanguage(code) {
   resetResults();
   queueTranslation();
   input.focus();
+  setRecorderMessage(`Record one phrase in ${language.label}. Stops after 30 seconds or a short silence.`);
 }
 
 function speak(text, code) {
@@ -189,7 +302,9 @@ function updateNetworkStatus() {
   const online = navigator.onLine;
   networkStatus.classList.toggle('offline', !online);
   networkStatus.lastElementChild.textContent = online ? 'Online' : 'Offline';
+  recordButton.disabled = !online;
   if (!online) {
+    if (recording) stopRecording('offline');
     cancelPending();
     if (input.value.trim()) {
       resetResults('You’re offline. Reconnect to request new translations.');
@@ -216,6 +331,7 @@ window.addEventListener('offline', updateNetworkStatus);
 window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); deferredInstallPrompt = event; installButton.hidden = false; });
 window.addEventListener('appinstalled', () => { deferredInstallPrompt = undefined; installButton.hidden = true; showToast('Lingua Live installed successfully.'); });
 installButton.addEventListener('click', async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = undefined; installButton.hidden = true; });
+recordButton.addEventListener('click', startRecording);
 
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => showToast('Offline support could not be enabled.')));
 resetResults();

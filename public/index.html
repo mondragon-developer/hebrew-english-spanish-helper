@@ -49,6 +49,16 @@
         </div>
         <label class="sr-only" for="source-text">Text to translate</label>
         <textarea id="source-text" maxlength="500" rows="7" lang="en" dir="ltr" placeholder="Start typing in English…" aria-describedby="source-help character-count"></textarea>
+        <div class="recorder" aria-labelledby="recorder-title">
+          <div>
+            <strong id="recorder-title">Speak instead</strong>
+            <p id="recording-status" role="status" aria-live="polite">Record one phrase in the selected language. Stops after 30 seconds or a short silence.</p>
+          </div>
+          <div class="recording-actions">
+            <span id="recording-timer" class="recording-timer" aria-hidden="true">0:00 / 0:30</span>
+            <button id="record-button" class="button record-button" type="button" aria-pressed="false"><span aria-hidden="true">●</span><span>Record</span></button>
+          </div>
+        </div>
         <div class="panel-footer">
           <p id="source-help">Translations appear after a short pause.</p>
           <div class="footer-actions">
@@ -64,7 +74,7 @@
       </div>
       <div id="results" class="results-grid"></div>
     </section>
-    <p class="privacy-note">Translations are machine-generated and may not be exact. Text is sent only when you request a translation and is not stored by Lingua Live.</p>
+    <p class="privacy-note">Translations and transcripts are machine-generated and may not be exact. Text and recorded audio are sent only to complete your request and are not stored by Lingua Live.</p>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>

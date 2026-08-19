@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title id="title">Lingua Live trilingual speech bubble</title>
-  <rect width="512" height="512" rx="112" fill="#b4533c"/>
-  <path d="M100 122c0-25 20-45 45-45h222c25 0 45 20 45 45v180c0 25-20 45-45 45H246l-87 73 19-73h-33c-25 0-45-20-45-45V122Z" fill="#fffaf4"/>
-  <circle cx="178" cy="214" r="25" fill="#b4533c"/>
-  <circle cx="256" cy="214" r="25" fill="#d88968"/>
-  <circle cx="334" cy="214" r="25" fill="#738d69"/>
-  <path d="M166 283h180" stroke="#3d332f" stroke-width="25" stroke-linecap="round"/>
-</svg>
