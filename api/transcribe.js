@@ -1,6 +1,6 @@
 import { SpeechProviderError, transcribeWithAzure } from './_lib/speech-provider.js';
 import { SpeechValidationError, parseSpeechInput } from './_lib/speech.js';
-import { checkRateLimit, isJsonRequest } from './_lib/security.js';
+import { checkRateLimit, isJsonRequest, isSameOriginRequest } from './_lib/security.js';
 
 function send(response, status, payload) {
   response.setHeader('Cache-Control', 'no-store');
@@ -15,6 +15,9 @@ export default async function handler(request, response) {
   }
   if (!isJsonRequest(request)) {
     return send(response, 415, { ok: false, error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Send transcription requests as JSON.' } });
+  }
+  if (!isSameOriginRequest(request)) {
+    return send(response, 403, { ok: false, error: { code: 'CROSS_ORIGIN_FORBIDDEN', message: 'Requests must come from the Lingua Live application.' } });
   }
   const rate = checkRateLimit('transcribe', request, { limit: 10, windowMs: 60_000 });
   response.setHeader('X-RateLimit-Remaining', String(rate.remaining));
