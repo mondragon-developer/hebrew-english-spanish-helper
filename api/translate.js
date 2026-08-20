@@ -1,6 +1,6 @@
 import { ProviderError, translateTargets, translateText } from './_lib/provider.js';
 import { ValidationError, validateBatchTranslationInput, validateTranslationInput } from './_lib/validation.js';
-import { checkRateLimit, isJsonRequest } from './_lib/security.js';
+import { checkRateLimit, isJsonRequest, isSameOriginRequest } from './_lib/security.js';
 
 function send(response, status, payload) {
   response.setHeader('Cache-Control', 'no-store');
@@ -15,6 +15,9 @@ export default async function handler(request, response) {
   }
   if (!isJsonRequest(request)) {
     return send(response, 415, { ok: false, error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Send translation requests as JSON.' } });
+  }
+  if (!isSameOriginRequest(request)) {
+    return send(response, 403, { ok: false, error: { code: 'CROSS_ORIGIN_FORBIDDEN', message: 'Requests must come from the Lingua Live application.' } });
   }
   const batchCost = Array.isArray(request.body?.targets) ? Math.min(2, Math.max(1, request.body.targets.length)) : 1;
   const rate = checkRateLimit('translate', request, { limit: 60, windowMs: 60_000, cost: batchCost });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkRateLimit, getClientId, isJsonRequest, resetRateLimitsForTests } from '../api/_lib/security.js';
+import { checkRateLimit, getClientId, isJsonRequest, isSameOriginRequest, resetRateLimitsForTests } from '../api/_lib/security.js';
 
 test.beforeEach(resetRateLimitsForTests);
 
@@ -31,4 +31,25 @@ test('charges batch request cost against the same rate budget', () => {
   const limited = checkRateLimit('batch', request, { limit: 3, windowMs: 1000, cost: 2 }, 1);
   assert.equal(limited.allowed, false);
   assert.equal(limited.remaining, 0);
+});
+
+test('accepts same-origin fetch metadata and rejects cross-site metadata', () => {
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': 'same-origin' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': 'none' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': 'cross-site' } }), false);
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': 'same-site' } }), false);
+});
+
+test('falls back to matching the Origin header against the request host', () => {
+  assert.equal(isSameOriginRequest({ headers: { origin: 'https://lingua.example', host: 'lingua.example' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'https://lingua.example', 'x-forwarded-host': 'lingua.example', host: 'internal.host' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'http://localhost:3000', host: 'localhost:3000' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'https://evil.example', host: 'lingua.example' } }), false);
+});
+
+test('rejects requests without same-origin proof or with malformed origins', () => {
+  assert.equal(isSameOriginRequest({ headers: {} }), false);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'null', host: 'lingua.example' } }), false);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'not a url', host: 'lingua.example' } }), false);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'https://lingua.example' } }), false);
 });

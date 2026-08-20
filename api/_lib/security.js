@@ -11,6 +11,21 @@ export function isJsonRequest(request) {
   return typeof contentType === 'string' && contentType.split(';', 1)[0].trim().toLowerCase() === 'application/json';
 }
 
+export function isSameOriginRequest(request) {
+  const fetchSite = headerValue(request, 'sec-fetch-site');
+  if (typeof fetchSite === 'string' && fetchSite) {
+    return fetchSite === 'same-origin' || fetchSite === 'none';
+  }
+  const origin = headerValue(request, 'origin');
+  const host = headerValue(request, 'x-forwarded-host') ?? headerValue(request, 'host');
+  if (typeof origin !== 'string' || !origin || typeof host !== 'string' || !host) return false;
+  try {
+    return new URL(origin).host.toLowerCase() === host.split(',', 1)[0].trim().toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
 export function getClientId(request) {
   const forwarded = headerValue(request, 'x-forwarded-for');
   const candidate = typeof forwarded === 'string' ? forwarded.split(',', 1)[0].trim() : '';
