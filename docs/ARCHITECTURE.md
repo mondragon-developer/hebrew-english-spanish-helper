@@ -305,6 +305,16 @@ This is appropriate for a privacy-conscious prototype and modest public traffic.
 5. Consider streamed or conversational transcription if the product moves beyond short phrases.
 6. Introduce a component framework only when product complexity—not fashion—justifies its runtime and maintenance cost.
 
+## Known trade-offs
+
+These are deliberate decisions for a free-tier demonstration, not oversights.
+
+- **Rate limiting is in-memory and per serverless instance.** Counters reset on cold starts and are not shared across concurrent instances, so limits are best-effort. The binding constraint is the providers' daily quotas rather than request volume, and a distributed store such as Redis would add cost and operational surface without protecting anything the quotas do not already bound.
+- **Client identity trusts platform-sanitized headers.** Request identity comes from forwarding headers that Vercel's edge sets and sanitizes. Self-hosting behind a different proxy would require revisiting the header handling in `api/_lib/security.js`.
+- **The same-origin gate is quota protection, not authentication.** It blocks drive-by scripts and scanners from spending the shared quotas; a determined client can still forge the headers. There are no accounts, sessions, or user secrets to protect.
+- **Provider quotas are pooled.** All visitors share one MyMemory character allowance and one Azure F0 speech allowance. When either is exhausted, the interface degrades to explicit, user-facing quota messages instead of failing silently or retrying.
+- **Recording uses ScriptProcessorNode.** It is deprecated in favor of AudioWorklet but remains supported in every current browser. Migration is a planned improvement and does not change the 16 kHz mono WAV contract with the API.
+
 ## Architectural decision summary
 
 | Decision | Reason | Revisit when |
