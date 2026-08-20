@@ -18,6 +18,17 @@ test('downsampling produces 16 kHz mono samples', () => {
   assert.ok(Math.abs(output[100] - 0.25) < 0.001);
 });
 
+test('downsampling concatenates many recorder chunks in order', () => {
+  const chunks = Array.from({ length: 12 }, (unused, index) => new Float32Array(4096).fill(index / 100));
+  const output = downsampleAudio(chunks, 48000);
+  assert.equal(output.length, Math.floor((12 * 4096) / 3));
+  assert.ok(Math.abs(output[0] - 0) < 0.001);
+  assert.ok(Math.abs(output[output.length - 1] - 0.11) < 0.001);
+  const passthrough = downsampleAudio(chunks, 16000);
+  assert.equal(passthrough.length, 12 * 4096);
+  assert.ok(Math.abs(passthrough[4096] - 0.01) < 0.0001);
+});
+
 test('WAV encoder writes valid 16 kHz, 16-bit mono headers', async () => {
   const wav = Buffer.from(await encodeWav(new Float32Array(16000)).arrayBuffer());
   assert.equal(wav.toString('ascii', 0, 4), 'RIFF');

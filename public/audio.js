@@ -9,7 +9,13 @@ export function calculateRms(samples) {
 }
 
 export function downsampleAudio(chunks, inputRate, outputRate = OUTPUT_SAMPLE_RATE) {
-  const input = Float32Array.from(chunks.flatMap((chunk) => Array.from(chunk)));
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const input = new Float32Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    input.set(chunk, offset);
+    offset += chunk.length;
+  }
   if (inputRate === outputRate) return input;
   if (inputRate < outputRate) throw new Error('Input sample rate must be at least 16 kHz.');
   const ratio = inputRate / outputRate;
