@@ -1,5 +1,7 @@
 # Lingua Live
 
+[![CI](https://github.com/mondragon-developer/hebrew-english-spanish-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/mondragon-developer/hebrew-english-spanish-helper/actions/workflows/ci.yml)
+
 [**Open Lingua Live →**](https://lingua-live-hespen.vercel.app/)
 
 [![Lingua Live translating Spanish into Hebrew and English](docs/lingua-live.png)](https://lingua-live-hespen.vercel.app/)
@@ -7,6 +9,8 @@
 Lingua Live is a fast, accessible translator for Hebrew, English, and Spanish. Select a source language, type or record a short phrase, and receive translations in both remaining languages.
 
 The application is designed for phones, iPads, tablets, desktop browsers, and installation as a Progressive Web App (PWA).
+
+**Built with:** vanilla ES-module JavaScript, semantic HTML, and modern CSS — **zero runtime dependencies** — deployed as Vercel serverless functions, with a 66-test suite, lint, syntax checks, and a production build verified in CI on every pull request.
 
 ## Accessibility
 
@@ -17,18 +21,26 @@ Lingua Live targets WCAG 2.2 Level AA with keyboard operation, visible focus, sc
 - Translates every direction between Hebrew, English, and Spanish
 - Displays both target-language translations together
 - Supports typed input and Azure-powered speech transcription
-- Translates after a 500 ms pause without sending empty requests
-- Cancels obsolete requests and prevents stale results
 - Enforces a 500-character text limit
 - Records one phrase for up to 45 seconds
 - Stops recording after approximately 1.75 seconds of silence
-- Enforces a 3 MB audio limit in both browser and API
 - Allows only one selected recording language and one active recording
 - Provides copy and device text-to-speech controls
 - Applies Hebrew right-to-left direction automatically
 - Handles empty, loading, success, offline, quota, timeout, and error states
 - Installs as a PWA with an offline application shell
 - Does not include accounts, analytics, cookies, or advertising trackers
+
+## Engineering highlights
+
+- Zero runtime dependencies: no framework, no bundler, and no third-party packages to audit or update
+- Same-origin gate and per-client rate limiting on both API endpoints, applied before any provider call
+- Strict Content Security Policy with no inline scripts, plus a full set of hardening response headers
+- Layered input validation: language allowlists, code-point length limits, strict base64 checks, and byte-level WAV header verification
+- Debounced translation requests with cancellation and stale-response gating, so results never render out of order
+- Browser and API independently enforce the same 500-character and 3 MB limits
+- Bounded, temporary caches with in-flight deduplication in both the browser tab and warm serverless instances
+- Server-side error logging records error names and messages only — never request bodies, audio, or credentials
 
 ## Supported languages
 
@@ -141,6 +153,7 @@ Unused allowance does not guarantee availability, accuracy, or future pricing. W
 - Lingua Live does not persist or log translation text, transcripts, or recorded audio. Successful translations can remain temporarily in bounded browser-tab and warm-function memory caches; server cache keys contain a SHA-256 hash rather than source text.
 - Translation and transcription responses use `Cache-Control: no-store`.
 - The service worker excludes every `/api/` request.
+- API endpoints accept only same-origin requests and apply per-client rate limits.
 - Azure credentials are read only on the server.
 - Microphone access requires an explicit browser permission.
 - Security headers restrict framing, unnecessary device permissions, and external scripts.
@@ -168,7 +181,7 @@ Requirements:
 - Node.js 20 or newer
 - A linked Vercel project for local serverless API testing
 
-Install dependencies and run all checks:
+Install and run all checks — `npm install` completes instantly because the project has no dependencies:
 
 ```bash
 npm install
@@ -213,10 +226,11 @@ Redeploy whenever environment variables change, then verify the HTTPS deployment
 
 ## Testing
 
-The automated suite covers:
+The automated suite (66 tests) covers:
 
 - Supported languages and target calculation
 - Translation validation, provider success, failure, and timeout behavior
+- Same-origin enforcement, rate limiting, and client identification
 - Copy/listen control state and Hebrew RTL
 - Language switching and stale-response prevention
 - Audio energy calculation and 16 kHz downsampling
