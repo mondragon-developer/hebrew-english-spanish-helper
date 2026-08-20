@@ -40,6 +40,13 @@ test('accepts same-origin fetch metadata and rejects cross-site metadata', () =>
   assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': 'same-site' } }), false);
 });
 
+test('normalizes header whitespace and case before comparing', () => {
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': ' Same-Origin ' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': ' CROSS-SITE ' } }), false);
+  assert.equal(isSameOriginRequest({ headers: { origin: ' https://Lingua.example ', host: 'lingua.example' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { 'sec-fetch-site': '   ', origin: 'https://lingua.example', host: 'lingua.example' } }), true);
+});
+
 test('falls back to matching the Origin header against the request host', () => {
   assert.equal(isSameOriginRequest({ headers: { origin: 'https://lingua.example', host: 'lingua.example' } }), true);
   assert.equal(isSameOriginRequest({ headers: { origin: 'https://lingua.example', 'x-forwarded-host': 'lingua.example', host: 'internal.host' } }), true);

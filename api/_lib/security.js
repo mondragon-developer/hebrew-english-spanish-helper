@@ -13,14 +13,15 @@ export function isJsonRequest(request) {
 
 export function isSameOriginRequest(request) {
   const fetchSite = headerValue(request, 'sec-fetch-site');
-  if (typeof fetchSite === 'string' && fetchSite) {
-    return fetchSite === 'same-origin' || fetchSite === 'none';
+  if (typeof fetchSite === 'string' && fetchSite.trim()) {
+    const site = fetchSite.trim().toLowerCase();
+    return site === 'same-origin' || site === 'none';
   }
   const origin = headerValue(request, 'origin');
   const host = headerValue(request, 'x-forwarded-host') ?? headerValue(request, 'host');
-  if (typeof origin !== 'string' || !origin || typeof host !== 'string' || !host) return false;
+  if (typeof origin !== 'string' || !origin.trim() || typeof host !== 'string' || !host) return false;
   try {
-    return new URL(origin).host.toLowerCase() === host.split(',', 1)[0].trim().toLowerCase();
+    return new URL(origin.trim()).host.toLowerCase() === host.split(',', 1)[0].trim().toLowerCase();
   } catch {
     return false;
   }
