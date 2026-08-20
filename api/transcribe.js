@@ -30,6 +30,7 @@ export default async function handler(request, response) {
     if (error instanceof SpeechValidationError || error instanceof SpeechProviderError) {
       return send(response, error.status, { ok: false, error: { code: error.code, message: error.message } });
     }
+    console.error('transcribe.unhandled', { name: error?.name, message: error?.message });
     return send(response, 500, { ok: false, error: { code: 'INTERNAL_ERROR', message: 'Speech transcription could not be completed.' } });
   }
 }

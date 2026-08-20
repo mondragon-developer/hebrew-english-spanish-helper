@@ -36,6 +36,7 @@ export default async function handler(request, response) {
     if (error instanceof ValidationError || error instanceof ProviderError) {
       return send(response, error.status, { ok: false, error: { code: error.code, message: error.message } });
     }
+    console.error('translate.unhandled', { name: error?.name, message: error?.message });
     return send(response, 500, { ok: false, error: { code: 'INTERNAL_ERROR', message: 'Translation could not be completed.' } });
   }
 }
