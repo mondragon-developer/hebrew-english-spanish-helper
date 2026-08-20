@@ -200,7 +200,7 @@ Available scripts:
 | `npm run preview` | Serve the existing production build |
 | `npm test` | Run behavioral tests with Node's test runner |
 | `npm run lint` | Run repository style checks |
-| `npm run typecheck` | Run JavaScript syntax checks |
+| `npm run syntaxcheck` | Run JavaScript syntax checks |
 | `npm run check` | Run lint, syntax checks, tests, and build |
 
 ## Vercel configuration and maintenance
